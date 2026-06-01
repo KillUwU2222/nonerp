@@ -44,4 +44,4 @@ async def nuke(ctx):
     await ctx.send("**✅ СЕРВЕР УНИЧТОЖЕН**")
 
 import os
-bot.run(os.environ[''])
+bot.run(os.environ['TOKEN'])
