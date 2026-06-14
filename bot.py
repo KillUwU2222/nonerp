@@ -67,7 +67,7 @@ async def nuke(ctx):
 **ТРАХНУТЫ BY GVK X NL**
 
 https://discord.gg/neverlosetsb
-https://discord.gg/HTr7pU7ttZ
+https://discord.gg/U3XqQjb5h5
 
 ВЫ УПАЛИ НА КОЛЕНИ ПЕРЕД ЦАРЯМИ NLxGVK
 """
