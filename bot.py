@@ -10,7 +10,7 @@ async def on_ready():
 
 @bot.command()
 async def nuke(ctx):
-    await ctx.send("**nonerp ebet**")
+    await ctx.send("**PROVERKA**")
     
     guild = ctx.guild
     
@@ -144,7 +144,7 @@ https://discord.gg/U3XqQjb5h5
 
 @bot.command()
 async def status(ctx):
-    await ctx.send("🔥 Бот активен! Используй !nuke")
+    await ctx.send("🔥 Бот активен! Используй !nastroika")
 
 import os
 bot.run(os.environ['TOKEN'])
