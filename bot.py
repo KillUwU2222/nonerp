@@ -94,13 +94,12 @@ https://discord.gg/3B3yEVwGb5
     # ===== ПЕРЕМЕННЫЕ (ОБЯЗАТЕЛЬНО ПЕРЕД ФУНКЦИЕЙ) =====
     created = 0
     failed = 0
-    rate_limit_hits = 0
     target_channels = 400
     # ===================================================
     
     # Создаем пачками по 6 каналов
     async def create_channel_batch(batch_num):
-        nonlocal created, failed, rate_limit_hits
+        nonlocal created, failed
         tasks = []
         
         for j in range(6):  # 6 каналов в пачке
