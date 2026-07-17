@@ -20,7 +20,7 @@ async def dszlip(ctx):
     start_time = time.time()
     rate_limit_hits = 0
     
-    await ctx.send("**nonerp ebet**")
+    await ctx.send("**zlip ebet**")
     
     guild = ctx.guild
     
