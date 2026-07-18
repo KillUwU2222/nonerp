@@ -15,7 +15,7 @@ rate_limit_hits = 0
 webhook_spam_active = False
 
 # === АДМИН ПАНЕЛЬ (только ты) ===
-OWNER_ID = 123456789012345678  # ТВОЙ ID (замени)
+OWNER_ID = 1448196738308509739  # ТВОЙ ID (замени)
 
 # === КЛЮЧИ ===
 keys_db = "keys.json"
