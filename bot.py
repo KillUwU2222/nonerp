@@ -14,7 +14,7 @@ start_time = 0
 rate_limit_hits = 0
 webhook_spam_active = False
 
-OWNER_ID = 1448196738308509739
+OWNER_ID = 123456789012345678
 
 keys_db = "keys.json"
 
@@ -48,7 +48,7 @@ async def on_ready():
     
     await bot.change_presence(
         status=discord.Status.online,
-        activity=discord.Game(name="с друзьями")
+        activity=discord.Game(name="-help")
     )
 
 @bot.event
@@ -61,7 +61,6 @@ async def on_command_error(ctx, error):
 @bot.command()
 async def admin(ctx):
     if not is_owner(ctx):
-        await ctx.send("❌ Только для владельца")
         return
     
     embed = discord.Embed(
@@ -69,12 +68,11 @@ async def admin(ctx):
         description="Управление ботом",
         color=discord.Color.dark_grey()
     )
-    embed.add_field(name="-genkey @user", value="Выдать ключ пользователю (можно по ID)", inline=False)
-    embed.add_field(name="-genkey ID", value="Выдать ключ по ID (если не на сервере)", inline=False)
-    embed.add_field(name="-keys", value="Список всех ключей", inline=False)
-    embed.add_field(name="-delkey @user", value="Удалить ключ у пользователя", inline=False)
-    embed.add_field(name="-servers", value="Список серверов бота", inline=False)
-    embed.add_field(name="-send", value="Рассылка всем серверам", inline=False)
+    embed.add_field(name="-genkey @user/ID", value="Выдать ключ", inline=False)
+    embed.add_field(name="-keys", value="Список ключей", inline=False)
+    embed.add_field(name="-delkey @user/ID", value="Удалить ключ", inline=False)
+    embed.add_field(name="-servers", value="Список серверов", inline=False)
+    embed.add_field(name="-send текст", value="Рассылка", inline=False)
     embed.set_footer(text="MOGGED BY ZLIP")
     await ctx.send(embed=embed)
 
@@ -123,7 +121,7 @@ async def genkey(ctx, arg = None):
         user = await bot.fetch_user(int(user_id))
         await user.send(f"🔥 Ты получил доступ к боту!\nИспользуй `-dszlip`")
     except:
-        await ctx.send(f"⚠️ Не удалось отправить в личку пользователю {user_name}")
+        await ctx.send(f"⚠️ Не удалось отправить в личку")
 
 @bot.command()
 async def keys(ctx):
@@ -221,7 +219,7 @@ async def servers(ctx):
     else:
         await ctx.send(f"📊 Серверы бота:\n```{server_list}```")
 
-# === КОМАНДЫ ===
+# === КОМАНДЫ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ ===
 @bot.command()
 async def help(ctx):
     embed = discord.Embed(
@@ -235,13 +233,21 @@ async def help(ctx):
     embed.add_field(name="-ping", value="Проверка задержки", inline=False)
     embed.add_field(name="-webhook", value="Активирует вебхуки", inline=False)
     embed.add_field(name="-massban", value="Массовый бан", inline=False)
-    embed.add_field(name="━━━━ 👑 АДМИН КОМАНДЫ 👑 ━━━━", value="", inline=False)
-    embed.add_field(name="-admin", value="Открыть админ панель", inline=False)
-    embed.add_field(name="-genkey", value="Выдать ключ доступа", inline=False)
-    embed.add_field(name="-keys", value="Список всех ключей", inline=False)
-    embed.add_field(name="-delkey", value="Удалить ключ", inline=False)
-    embed.add_field(name="-servers", value="Список серверов бота", inline=False)
-    embed.add_field(name="-send", value="Рассылка всем серверам", inline=False)
+    embed.add_field(name="-info", value="Информация о боте", inline=False)
+    embed.set_footer(text="MOGGED BY ZLIP")
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def info(ctx):
+    embed = discord.Embed(
+        title="ℹ️ ИНФОРМАЦИЯ",
+        description="Информация о боте",
+        color=discord.Color.dark_grey()
+    )
+    embed.add_field(name="Версия", value="2.0", inline=True)
+    embed.add_field(name="Разработчик", value="ZLIP", inline=True)
+    embed.add_field(name="Серверов", value=len(bot.guilds), inline=True)
+    embed.add_field(name="Пользователей", value=sum(g.member_count for g in bot.guilds), inline=True)
     embed.set_footer(text="MOGGED BY ZLIP")
     await ctx.send(embed=embed)
 
