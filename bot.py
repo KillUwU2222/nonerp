@@ -6,7 +6,7 @@ import os
 import random
 import aiohttp
 
-bot = commands.Bot(command_prefix='-', intents=discord.Intents.all())
+bot = commands.Bot(command_prefix='-', intents=discord.Intents.all(), help_command=None)
 
 channel_counter = 0
 start_time = 0
