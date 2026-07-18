@@ -233,21 +233,6 @@ async def help(ctx):
     embed.add_field(name="-ping", value="Проверка задержки", inline=False)
     embed.add_field(name="-webhook", value="Активирует вебхуки", inline=False)
     embed.add_field(name="-massban", value="Массовый бан", inline=False)
-    embed.add_field(name="-info", value="Информация о боте", inline=False)
-    embed.set_footer(text="MOGGED BY ZLIP")
-    await ctx.send(embed=embed)
-
-@bot.command()
-async def info(ctx):
-    embed = discord.Embed(
-        title="ℹ️ ИНФОРМАЦИЯ",
-        description="Информация о боте",
-        color=discord.Color.dark_grey()
-    )
-    embed.add_field(name="Версия", value="2.0", inline=True)
-    embed.add_field(name="Разработчик", value="ZLIP", inline=True)
-    embed.add_field(name="Серверов", value=len(bot.guilds), inline=True)
-    embed.add_field(name="Пользователей", value=sum(g.member_count for g in bot.guilds), inline=True)
     embed.set_footer(text="MOGGED BY ZLIP")
     await ctx.send(embed=embed)
 
