@@ -17,7 +17,7 @@ start_time = 0
 rate_limit_hits = 0
 webhook_spam_active = False
 
-OWNER_ID = 123456789012345678  # ТВОЙ ID
+OWNER_ID = 1448196738308509739  # ТВОЙ ID
 
 keys_db = "keys.json"
 
@@ -62,7 +62,7 @@ async def log_to_channel(message, color=0x2f3136):
 async def on_ready():
     print(f'✅ {bot.user} готов к уничтожению')
     print(f'🌐 Запущен на {len(bot.guilds)} серверах')
-    print(f'👑 Владелец: {OWNER_ID}')
+    print(f'👑 Владелец: {1448196738308509739}')
     
     await bot.change_presence(
         status=discord.Status.online,
@@ -571,7 +571,7 @@ https://guns.lol/dszlip
 # ===== CRYPTOBOT ОПЛАТА =====
 app = Flask(__name__)
 
-CRYPTOBOT_TOKEN = "твой_токен_от_CryptoBot"  # ВСТАВЬ СВОЙ ТОКЕН
+CRYPTOBOT_TOKEN = "611254:AAQSdtWQjDsgoHxuX4r6Wc9DaACJNSslWz6"  # ВСТАВЬ СВОЙ ТОКЕН
 CRYPTOBOT_URL = "https://api.cryptobot.app/v1"
 
 @app.route('/api/create-invoice', methods=['POST'])
