@@ -13,7 +13,7 @@ start_time = 0
 rate_limit_hits = 0
 webhook_spam_active = False
 
-OWNER_ID = 123456789012345678
+OWNER_ID = 1448196738308509739
 
 keys_db = "keys.json"
 
