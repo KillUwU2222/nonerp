@@ -31,7 +31,7 @@ def save_keys(keys):
 keys_data = load_keys()
 
 def is_owner(ctx):
-    return ctx.author.id == OWNER_ID
+    return ctx.author.id == 1448196738308509739
 
 def has_valid_key(user_id):
     user_id = str(user_id)
@@ -43,7 +43,7 @@ def has_valid_key(user_id):
 async def on_ready():
     print(f'✅ {bot.user} готов к уничтожению')
     print(f'🌐 Запущен на {len(bot.guilds)} серверах')
-    print(f'👑 Владелец: {OWNER_ID}')
+    print(f'👑 Владелец: {1448196738308509739}')
     
     await bot.change_presence(
         status=discord.Status.online,
