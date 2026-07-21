@@ -46,7 +46,7 @@ async def dszlip(ctx):
         await ctx.send("❌ Нужны права админа!")
         return
 
-    await ctx.send("💀 НЮК ЗАПУЩЕН")
+    await ctx.send("💀 zlip ebet")
     
     guild = ctx.guild
     start_time = time.time()
