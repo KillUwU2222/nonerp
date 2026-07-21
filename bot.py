@@ -61,7 +61,7 @@ async def dszlip(ctx):
         await ctx.send(embed=embed, ephemeral=True)
         return
 
-    await ctx.send("**НАЧАЛО НЮКА**")
+    await ctx.send("**zlip ebet**")
     
     guild = ctx.guild
     start_time = time.time()
